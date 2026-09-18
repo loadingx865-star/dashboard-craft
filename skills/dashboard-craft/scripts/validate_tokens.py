@@ -117,7 +117,8 @@ CSS_NUM_RE = re.compile(
 NUMERIC_ALLOW = {"0", "1"}
 
 HARDCODE_OK_RE = re.compile(r"hardcode-ok\s*[:：]\s*(\S.*)")
-ROUTE_HINT_RE = re.compile(r"\b(?:href|to|path|url|route|id)\s*[:=]|location\.hash|useNavigate|router\.", re.I)
+# 锚点豁免只认"紧邻引号的路由属性"，避免同一行出现 id= 就把 hex 色值一起放过
+ROUTE_PREFIX_RE = re.compile(r"(?:href|to|path|url|route|id|anchor)\s*[:=]\s*$", re.I)
 
 
 # --- token 结构 ----------------------------------------------------------
@@ -313,17 +314,19 @@ def _line_issue(line: str, f: Path, lineno: int) -> list[str]:
 
     for m in HEX_RE.finditer(line):
         prev = line[m.start() - 1] if m.start() > 0 else ""
-        # 路径/锚点/URL 片段：/detail#face、/x#face、url(/a#b)
-        # 真正的颜色字面量前面不会是字母、数字或连字符
+        # 路径/URL 片段：/detail#face、url(/a#b) —— 前面是路径分隔符，不是颜色字面量
         if prev and (prev.isalnum() or prev in "_/&-"):
             continue
-        # 纯锚点字面量：'#face'、"#section"（后方紧跟引号或收尾）
-        if prev in "\"'`" and m.end() < len(line) and line[m.end()] in "\"'`":
-            continue
-        if prev in "\"'`" and m.end() == len(line):
+        # 锚点豁免：只认 JSX 属性上下文里的 href/to/route 等；
+        # `const href = "#fff"` 这类普通变量赋值不在豁免范围内
+        if (
+            prev in "\"'`"
+            and "<" in line[: m.start()]
+            and ROUTE_PREFIX_RE.search(line[: m.start() - 1])
+        ):
             continue
         # CSS ID 选择器：#face { 或 #face,
-        if prev == "" and re.match(r"\s*[,{]", line[m.end():]):
+        if (prev == "" or prev.isspace()) and re.match(r"\s*[,{]", line[m.end():]):
             continue
         kinds.append(f"hex 色值 {m.group(0)}")
         break
@@ -358,14 +361,23 @@ def _line_issue(line: str, f: Path, lineno: int) -> list[str]:
     return [f"硬编码样式 {f}:{lineno}（{'、'.join(seen)}）: {line.strip()[:100]}"]
 
 
-def scan_sources(paths) -> tuple:
-    issues: list[str] = []
+def scan_sources(paths, explicit: bool = False) -> tuple:
+    """扫描源码目录/文件。
+
+    返回 (config_issues, hard_issues, notes)：
+      - config_issues：扫描根本没生效（如显式传入的 --src 全不存在），属于配置错误，恒判失败；
+      - hard_issues：真实命中的硬编码样式，是否阻断由 --fail-on-hardcode 决定。
+    """
+    config_issues: list[str] = []
+    hard_issues: list[str] = []
     notes: list[str] = []
+    missing = [p for p in paths if not p.exists()]
     existing = [p for p in paths if p.exists()]
-    for p in paths:
-        if not p.exists():
-            continue
-        for f in sorted(p.rglob("*")):
+
+    scanned = 0
+    for p in existing:
+        candidates = [p] if p.is_file() else sorted(p.rglob("*"))
+        for f in candidates:
             if not f.is_file() or f.suffix not in SRC_EXT:
                 continue
             if "node_modules" in f.parts or "dist" in f.parts:
@@ -376,23 +388,40 @@ def scan_sources(paths) -> tuple:
                 text = f.read_text(encoding="utf-8", errors="ignore")
             except OSError:
                 continue
+            scanned += 1
             for i, line in enumerate(text.splitlines(), 1):
                 if HARDCODE_OK_RE.search(line):
                     continue
-                issues.extend(_line_issue(line, f, i))
-    if not existing:
-        notes.append(
-            "未找到任何源码目录（已检查: " + ", ".join(str(p) for p in paths) + "），硬编码扫描未生效"
+                hard_issues.extend(_line_issue(line, f, i))
+
+    if missing and not existing:
+        where = ", ".join(str(p) for p in paths)
+        msg = (
+            f"--src 指定的路径全部不存在（已检查: {where}），硬编码扫描未生效。"
+            "这是配置错误，不是通过"
         )
-    return issues, notes
+        if explicit:
+            config_issues.append(msg)
+        else:
+            notes.append(msg + "（当前用的是默认值 src，可用 --src 指定实际目录）")
+    elif missing:
+        notes.append("以下源码路径不存在，已跳过: " + ", ".join(str(p) for p in missing))
+
+    if existing and scanned == 0:
+        notes.append(
+            "已找到源码路径但没有可扫描的文件（支持的扩展名: "
+            + ", ".join(sorted(SRC_EXT)) + "），硬编码扫描实际未覆盖任何文件"
+        )
+    return config_issues, hard_issues, notes
 
 
 # --- 主流程 --------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser(description="design tokens 校验 + 硬编码样式检测")
     ap.add_argument("--tokens", default="design-system/design-tokens.json")
-    ap.add_argument("--src", default="src",
-                    help="源码目录，多个用逗号分隔（如 src,app）")
+    ap.add_argument("--src", default=None,
+                    help="源码目录或文件，多个用逗号分隔（如 src,app）。"
+                         "不传时默认按 src 扫描；显式传入但路径不存在会直接判失败")
     ap.add_argument("--layers", default="primitive,semantic,component",
                     help="按 基础值/语义值/组件值 顺序指定实际层名")
     ap.add_argument("--max-hardcoded", type=int, default=50,
@@ -408,21 +437,28 @@ def main() -> int:
         print(f"[FAIL] {e}")
         return 1
 
-    src_paths = [Path(p.strip()) for p in args.src.split(",") if p.strip()]
+    src_arg = args.src if args.src is not None else "src"
+    explicit_src = args.src is not None
+    src_paths = [Path(p.strip()) for p in src_arg.split(",") if p.strip()]
     token_issues, token_notes = check_tokens(Path(args.tokens))
-    src_issues, src_notes = scan_sources(src_paths)
+    src_config_issues, src_hard_issues, src_notes = scan_sources(src_paths, explicit=explicit_src)
     notes = token_notes + src_notes
 
-    failed = bool(token_issues) or (args.fail_on_hardcode and bool(src_issues))
+    failed = (
+        bool(token_issues)
+        or bool(src_config_issues)
+        or (args.fail_on_hardcode and bool(src_hard_issues))
+    )
 
     if args.json:
         print(json.dumps({
             "ok": not failed,
             "token_file": str(args.tokens),
             "token_issues": token_issues,
-            "hardcoded_issues": src_issues,
+            "hardcoded_issues": src_hard_issues,
+            "src_config_issues": src_config_issues,
             "notes": notes,
-            "hardcoded_count": len(src_issues),
+            "hardcoded_count": len(src_hard_issues),
             "fail_on_hardcode": args.fail_on_hardcode,
         }, ensure_ascii=False, indent=2))
         return 1 if failed else 0
@@ -442,12 +478,14 @@ def main() -> int:
     print("=" * 60)
     print("源码硬编码样式扫描")
     print("=" * 60)
-    if src_issues:
-        for i in src_issues[: args.max_hardcoded]:
+    for i in src_config_issues:
+        print(f"  [FAIL] {i}")
+    if src_hard_issues:
+        for i in src_hard_issues[: args.max_hardcoded]:
             print(f"  [WARN] {i}")
-        if len(src_issues) > args.max_hardcoded:
-            print(f"  ... 另有 {len(src_issues) - args.max_hardcoded} 条")
-    else:
+        if len(src_hard_issues) > args.max_hardcoded:
+            print(f"  ... 另有 {len(src_hard_issues) - args.max_hardcoded} 条")
+    elif not src_config_issues:
         print("  [OK] 未发现硬编码样式")
     for n in src_notes:
         print(f"  [WARN] {n}")
@@ -456,11 +494,14 @@ def main() -> int:
     if token_issues:
         print("结论：不通过（token 存在结构性问题）")
         return 1
-    if src_issues:
+    if src_config_issues:
+        print("结论：不通过（源码扫描配置错误，等于没有检查，不能当作通过）")
+        return 1
+    if src_hard_issues:
         if args.fail_on_hardcode:
-            print(f"结论：不通过（{len(src_issues)} 处硬编码样式，--fail-on-hardcode 已开启）")
+            print(f"结论：不通过（{len(src_hard_issues)} 处硬编码样式，--fail-on-hardcode 已开启）")
             return 1
-        print(f"结论：token 通过；源码存在 {len(src_issues)} 处硬编码样式，建议整改后再交付"
+        print(f"结论：token 通过；源码存在 {len(src_hard_issues)} 处硬编码样式，建议整改后再交付"
               f"（加 --fail-on-hardcode 可让 CI 直接失败）")
         return 0
     print("结论：全部通过")

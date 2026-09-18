@@ -190,6 +190,80 @@ def main() -> int:
     run([GATES, "--project", thin, "--stage", "6"],
         1, "报告缺少 a11y/冒烟/视觉结论 → 阶段 6 失败", "阶段 6 未通过")
 
+    print("\n--- 假通过防线：参数/配置错误不得算作通过 ---")
+    run([GATES, "--project", DEMO, "--stage", "9"],
+        2, "非法阶段号 → argparse 报错退出（不再静默全过）")
+    run([GATES, "--project", DEMO, "--stage", "-1"],
+        2, "负阶段号 → argparse 报错退出")
+    run([VALIDATE, "--tokens", EXAMPLE_TOKENS, "--src", TMP / "no-such-src",
+         "--fail-on-hardcode"],
+        1, "--src 指向不存在的目录 → 配置错误判失败", "配置错误")
+
+    print("\n--- 硬编码检测：hex 色值漏报回归（上轮只报 CSS 里的） ---")
+    hexprobe = variant("hex-probe") / "src" / "probe"
+    hexprobe.mkdir(parents=True, exist_ok=True)
+    (hexprobe / "probe.tsx").write_text(
+        'const c = "#1e293b";\n'
+        'export const B = () => <div style={{ background: "#1e293b" }} />;\n',
+        encoding="utf-8",
+    )
+    r = subprocess.run(
+        [sys.executable, str(VALIDATE), "--tokens", str(EXAMPLE_TOKENS),
+         "--src", str(hexprobe), "--json"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    data = json.loads(r.stdout)
+    hit = "\n".join(data["hardcoded_issues"])
+    if hit.count("#1e293b") >= 2:
+        globals()["passed"] += 1
+        print("  [OK]   JSX 变量与内联样式里的 hex 色值均被抓到")
+    else:
+        failures.append("hex 漏报：JSX/内联样式里的 #1e293b 未被抓到")
+        print("  [FAIL] hex 漏报：JSX/内联样式里的 #1e293b 未被抓到")
+
+    print("\n--- 锚点豁免：只认 JSX 属性，不得放过同名变量 ---")
+    anchor_probe = variant("anchor-probe") / "src" / "probe"
+    anchor_probe.mkdir(parents=True, exist_ok=True)
+    (anchor_probe / "probe.tsx").write_text(
+        'const href = "#ffffff";\n'
+        'export const A = () => <a href="#section">ok</a>;\n'
+        'export const B = () => <Link to="/detail#face">ok</Link>;\n',
+        encoding="utf-8",
+    )
+    out = run([VALIDATE, "--tokens", EXAMPLE_TOKENS, "--src", anchor_probe,
+               "--fail-on-hardcode"],
+              1, 'const href="#ffffff" → 判硬编码；真锚点不误报', "#ffffff")
+    if "section" in out or "face" in out:
+        failures.append("锚点误报：真锚点 #section / /detail#face 被当成色值")
+        print("  [FAIL] 锚点误报：真锚点被当成色值")
+    else:
+        globals()["passed"] += 1
+        print("  [OK]   真锚点 #section 与 /detail#face 未误报")
+
+    print("\n--- Gate 反例：矩阵失败态与空约束卡不得算通过 ---")
+    bad_matrix = variant(
+        "matrix-failed-project",
+        rewrite={"acceptance-matrix.md": (
+            "# 验收矩阵\n\n"
+            "| 视口 | 宽度 | 高度 | 浏览器 | 结果 |\n"
+            "|---|---|---|---|---|\n"
+            "| laptop | 1920 | 1080 | Chrome | 失败 |\n"
+            "| tv-4k | 3840 | 2160 | Chrome | 不通过 |\n\n"
+            "截图基线位置：`__screenshots__/`\n"
+        )},
+    )
+    run([GATES, "--project", bad_matrix, "--stage", "5"],
+        1, "矩阵结果为失败/不通过 → 阶段 5 失败", "阶段 5 未通过")
+
+    no_table = variant(
+        "card-no-table-project",
+        rewrite={"design-system/constraints-card.md": (
+            "# 环境约束卡\n\n目标 1920x1080，Chrome。\n"
+        )},
+    )
+    run([GATES, "--project", no_table, "--stage", "0"],
+        1, "约束卡只有正文没有表格 → 阶段 0 失败", "没有任何表格数据行")
+
     print("\n--- 工具链脚本：缺失基线必须报错（不得假装全部更新） ---")
     run([SCRIPTS / "refresh_toolchain.py", "--offline",
          "--baseline", TMP / "no-such-baseline.json"],

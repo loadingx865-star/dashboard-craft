@@ -4,7 +4,7 @@ description: 数据看板 / 运营大屏 / 工业控制台的前端工程化开�
 license: MIT
 compatibility: 需要 Python 3.9+（scripts/ 下的校验脚本仅用标准库）。refresh_toolchain.py 需要访问 registry.npmjs.org；内网环境请加 --offline。assets/templates/playwright.viewports.ts 需要 Node.js 与 @playwright/test。本 skill 面向 React / Vue 看板类前端，与具体框架版本无关。
 metadata:
-  version: "2.1.0"
+  version: "2.1.1"
   updated: "2026-09-18"
   author: loadingx865-star
   applies-to: React / Vue 看板类前端
@@ -29,7 +29,7 @@ AI 辅助开发看板时反复出现的三类事故：
 违背任一条，产出即视为不合格，必须回退。
 
 1. **无约束不开发** —— 环境约束卡未填写完整，不得写第一行 UI 代码。
-2. **无真源不写样式** —— 颜色、字号、间距、圆角、阴影、图表配色必须来自 design tokens，禁止页面内硬编码色值与魔法数字。硬编码包括：hex 色值、`rgb()/hsl()`、Tailwind 调色板原子类（`bg-slate-900`）、Tailwind 颜色关键字类（`text-white`）、任意值尺寸（`text-[13px]`）、内联样式数值。**由 `scripts/validate_tokens.py --fail-on-hardcode` 机器判定，不接受口头声明。**
+2. **无真源不写样式** —— 颜色、字号、间距、圆角、阴影、图表配色必须来自 design tokens，禁止页面内硬编码色值与魔法数字。硬编码包括：hex 色值（含 JSX 属性与内联样式里的字面量）、`rgb()/hsl()`、Tailwind 调色板原子类（`bg-slate-900`）、Tailwind 颜色关键字类（`text-white`）、任意值尺寸（`text-[13px]`）、内联样式数值。**由 `scripts/validate_tokens.py --fail-on-hardcode` 机器判定，不接受口头声明。**
 3. **无矩阵不交付** —— 交付前必须跑完"分辨率 × 浏览器"验证矩阵，截图基线已存档。矩阵文件与基线路径由 `scripts/check_gates.py` 校验。
 4. **一个概念一处实现** —— 同类组件与图表只有一个实现入口；禁止为赶进度另写一套。
 5. **偏离必须登记** —— 任何对设计真源的偏离，都要写入页面级覆盖文件并说明理由，禁止静默偏离。
@@ -56,7 +56,7 @@ AI 辅助开发看板时反复出现的三类事故：
 | 阶段 | 判定方式 | 命令 |
 |---|---|---|
 | 0 | 约束卡存在且无空项/占位符 | `python <skill>/scripts/check_gates.py --project . --stage 0` |
-| 1 | token 结构合法、无硬编码样式 | `python <skill>/scripts/validate_tokens.py --tokens design-system/design-tokens.json --src src,app` |
+| 1 | token 结构合法、无硬编码样式 | `python <skill>/scripts/validate_tokens.py --tokens design-system/design-tokens.json --src src,app --fail-on-hardcode` |
 | 2 | 任务文件含可验证验收标准 | `python <skill>/scripts/check_gates.py --project . --stage 2` |
 | 3 | 布局骨架入口存在 | `python <skill>/scripts/check_gates.py --project . --stage 3` |
 | 4 | 组件与图表封装各有唯一入口 | `python <skill>/scripts/check_gates.py --project . --stage 4` |
@@ -81,6 +81,8 @@ src/components + src/charts  阶段 4 组件与图表唯一入口
 *report*.md                  阶段 6 性能/a11y/冒烟/视觉报告
 README.md                    阶段 7 部署与回滚说明
 ```
+
+**参数与配置错误不算通过**：`--stage` 只接受 0-7，传其他值直接报参数错误；显式 `--src` 指向的路径全部不存在时判失败——扫描没跑起来等于没检查，脚本不会拿"没有告警"冒充"通过"。
 
 **非标准目录约定也可行**：若项目用 `app/views`、`lib/ui`、`lib/charts` 这类结构，在 MASTER 的「目录结构」小节登记真实路径即可通过阶段 3/4。登记必须按类别语义词对齐（骨架 / 组件 / 图表分别登记），登记一个不相关的目录不会放行整个结构 Gate。
 

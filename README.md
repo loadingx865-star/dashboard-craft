@@ -117,8 +117,8 @@ python $SKILL/scripts/refresh_toolchain.py --offline  # 内网，只读本地缓
 
 | 脚本 | 关键参数 |
 |---|---|
-| `validate_tokens.py` | `--tokens` 指定 token 文件；`--src a,b` 指定多个源码目录；`--layers base,alias,config` 自定义层名；`--fail-on-hardcode` 硬编码即失败（CI 用）；`--json` 机读输出 |
-| `check_gates.py` | `--project .` 指定目标项目；`--stage 0` 只查某阶段（可重复）；`--allow-empty-card` 只查结构不卡填写；`--json` 机读输出 |
+| `validate_tokens.py` | `--tokens` 指定 token 文件；`--src a,b` 指定多个源码目录/文件（路径不存在会判失败）；`--layers base,alias,config` 自定义层名；`--fail-on-hardcode` 硬编码即失败（CI 用）；`--json` 机读输出 |
+| `check_gates.py` | `--project .` 指定目标项目；`--stage 0` 只查某阶段（可重复，仅接受 0-7）；`--allow-empty-card` 只查结构不卡填写；`--json` 机读输出 |
 | `refresh_toolchain.py` | `--baseline` 指定基线；`--update-baseline` 确认后写回基线；`--offline` 离线 |
 
 Windows 下把 `~/` 换成 `%USERPROFILE%\`，或用 PowerShell 的 `$env:USERPROFILE`。

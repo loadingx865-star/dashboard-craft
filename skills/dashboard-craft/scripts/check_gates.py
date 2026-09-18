@@ -131,6 +131,12 @@ def check_constraints_card(path: Path | None, allow_empty: bool):
     rows = _table_rows(text)
     data_rows = [r for r in rows if len(r) >= 2]
 
+    if not data_rows:
+        issues.append(
+            "阶段 0 未通过：约束卡没有任何表格数据行。"
+            "请从 skill 的 assets/templates/constraints-card.md 复制结构后填写"
+        )
+
     empty_rows = [r for r in data_rows if any(c == "" for c in r[1:])]
     if empty_rows and not allow_empty:
         issues.append(
@@ -219,6 +225,15 @@ def check_matrix(root: Path, matrix: Path | None, tokens_present: bool):
         issues.append(
             f"阶段 5 未通过：验收矩阵仍有 {len(pending)} 个视口未标记通过"
             f"（如 {pending[0][1] if len(pending[0]) > 1 else pending[0][0]}）"
+        )
+    failed_rows = [
+        r for r in viewport_rows
+        if any(re.search(r"失败|不通过|未通过|fail", c, re.I) for c in r)
+    ]
+    if failed_rows:
+        issues.append(
+            f"阶段 5 未通过：验收矩阵有 {len(failed_rows)} 个视口结果为失败/不通过"
+            f"（如 {failed_rows[0][1] if len(failed_rows[0]) > 1 else failed_rows[0][0]}）"
         )
     if not re.search(r"基线|baseline|__screenshots__", text, re.I):
         issues.append("阶段 5 未通过：验收矩阵未登记截图基线位置")
@@ -336,8 +351,8 @@ def check_delivery(root: Path):
 def main() -> int:
     ap = argparse.ArgumentParser(description="dashboard-craft Gate 校验")
     ap.add_argument("--project", default=".", help="目标项目根目录")
-    ap.add_argument("--stage", type=int, action="append",
-                    help="只校验指定阶段（可重复，如 --stage 0 --stage 1）")
+    ap.add_argument("--stage", type=int, action="append", choices=sorted(STAGE_NAMES),
+                    help="只校验指定阶段 0-7（可重复，如 --stage 0 --stage 1）")
     ap.add_argument("--allow-empty-card", action="store_true",
                     help="只检查文件是否存在与结构，不卡填写完整度")
     ap.add_argument("--json", action="store_true", help="以 JSON 输出")

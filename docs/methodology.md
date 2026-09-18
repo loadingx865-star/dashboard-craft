@@ -1,6 +1,6 @@
 # 看板前端开发全流程方法论
 
-> 版本 2.1 · 2026-09-18
+> 版本 2.1.1 · 2026-09-18
 > 配套可安装 Skill：`skills/dashboard-craft/`
 
 ---
@@ -130,6 +130,8 @@ acceptance-matrix.md         阶段 5 验收矩阵
 src/layouts | components | charts
 README.md                    阶段 7 部署与回滚说明
 ```
+
+`--stage` 只接受 0-7，非法值直接报参数错误；显式 `--src` 指向的路径若全部不存在，判为配置错误而不是通过——扫描没真正跑起来时，脚本不会拿"零告警"冒充"通过"。
 
 硬编码检测在 CI 中用 `--fail-on-hardcode` 强制失败；本地自查可省略该参数，只告警不阻断。行内注释 `hardcode-ok: 理由` 可豁免个例（例如 Canvas 绘制参数）。
 

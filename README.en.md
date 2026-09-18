@@ -117,8 +117,8 @@ Key flags:
 
 | Script | Flags |
 |---|---|
-| `validate_tokens.py` | `--tokens` token file; `--src a,b` multiple source dirs; `--layers base,alias,config` custom layer names; `--fail-on-hardcode` exit non-zero on hardcoded styles (CI); `--json` |
-| `check_gates.py` | `--project .` target project; `--stage 0` single stage (repeatable); `--allow-empty-card` structure-only; `--json` |
+| `validate_tokens.py` | `--tokens` token file; `--src a,b` multiple source dirs/files (a nonexistent path fails the run); `--layers base,alias,config` custom layer names; `--fail-on-hardcode` exit non-zero on hardcoded styles (CI); `--json` |
+| `check_gates.py` | `--project .` target project; `--stage 0` single stage, 0-7 only (repeatable); `--allow-empty-card` structure-only; `--json` |
 | `refresh_toolchain.py` | `--baseline` baseline path; `--update-baseline` write back; `--offline` |
 
 On Windows, replace `~/` with `%USERPROFILE%\`.
