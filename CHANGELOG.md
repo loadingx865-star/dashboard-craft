@@ -9,6 +9,35 @@
 - 增加 CI 中的视觉回归示例工作流
 - 补充国产内核浏览器的兼容性适配清单
 
+## [2.1.0] - 2026-09-18
+
+### 新增
+- `scripts/check_gates.py`：八阶段 Gate 机器判定，检查标准项目结构、约束卡空项、任务票验收标准、验收矩阵未测视口与基线登记。退出码非 0 即 Gate 未通过
+- `assets/templates/MASTER.md`：设计真源模板，含缩放策略、图表规范、**目录结构登记**三节（此前 Gate 要求 MASTER 却没有模板可复制）
+- `assets/examples/`：图表封装、大屏缩放、断点 Hook 三个精简形态参考
+- `tests/run_tests.py` + `tests/fixtures/`：22 个正反用例，覆盖硬编码抓取、误报控制、Gate 正反判定
+- `README.en.md`：英文版说明
+- `compatibility` frontmatter 字段，明确 Python / 网络 / Node 前提
+- CI 增加 Windows 与 Python 3.9/3.11/3.13 矩阵、回归测试、官方 `skills-ref validate`
+
+### 变更
+- `validate_tokens.py` 重写：支持扁平命名、DTCG 分组嵌套、多主题 `themes{}` 三种 token 组织；层名可用 `--layers` 配置并内置同义词表
+- 硬编码检测扩展：Tailwind 调色板原子类与颜色关键字类、任意值尺寸、`rgb()/hsl()/oklch()`、内联样式与 CSS 魔法数字；默认只告警，`--fail-on-hardcode` 才失败
+- `refresh_toolchain.py`：基线默认路径改为脚本同级目录，不再依赖当前工作目录；新增 `--offline` 读本地缓存；基线缺失时明确报错，不再把全部依赖误标为"新包"
+- 容差按视口分档：4K 视口改用 `maxDiffPixels` 绝对值，默认比例阈值从 0.01 收紧到 0.002；视口矩阵新增 `dpr: 2` 的 4K HiDPI 档
+- `SKILL.md` description 改为中英混排，覆盖 dashboard / KPI screen / control room / large display 等检索词，并支持审计已有看板
+- `tools/check_skill.py`：新增官方 frontmatter 字段白名单、description 长度、SKILL.md 行数/token 预算、`assets/examples/` 登记检查
+- 方法论文档补充 Gate 机器判定、多主题 token、容差分档与 DPR、离线模式
+
+### 修复
+- 阶段 3/4 的 Gate 此前只输出 INFO、无论结构如何都返回通过，属于"静默放行"；现改为找不到骨架/组件/图表入口即失败
+- 非标准目录约定改为按类别校验：MASTER「目录结构」小节登记的路径必须语义匹配且真实存在，登记骨架目录不能顺带放行图表封装目录
+- 阶段 6 此前只按文件名判断报告是否存在；现要求报告正文覆盖性能、可访问性、冒烟、视觉回归四类结论
+- 回归测试补入"合规项目必须通过"的正向夹具，避免把校验器修成一律报错
+
+### 说明
+- 1.x 到 2.0 是同版本内的重构与改名（`dashboard-engineering` → `dashboard-craft`），无迁移成本；2.1 起对外接口以脚本参数为准，向后兼容 2.0 的调用方式
+
 ## [2.0.0] - 2026-09-18
 
 ### 变更

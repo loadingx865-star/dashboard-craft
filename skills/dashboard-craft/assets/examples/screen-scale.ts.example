@@ -1,0 +1,55 @@
+// 大屏三种缩放策略的形态参考（阶段 1 选定一种，不要三种混用）
+// 说明：形态参考，不是照抄目标。选定策略写进 design-system/MASTER.md。
+
+/* ---------- 策略 A：等比缩放（固定设计稿尺寸整体 scale） ---------- */
+// 适用：单一固定终端、纯展示、比例完全确定的场景。
+// 已知代价：非 16:9 会留黑边或裁切；极端缩放下字体可能模糊。
+
+export const DESIGN_WIDTH = 1920;
+export const DESIGN_HEIGHT = 1080;
+
+export function useScaleToFit(containerRef: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let raf = 0;
+
+    const apply = () => {
+      const scale = Math.min(el.clientWidth / DESIGN_WIDTH, el.clientHeight / DESIGN_HEIGHT);
+      el.style.setProperty('--scale', String(scale));
+      // 用 transform 缩放：不影响布局计算，重排成本最低
+    };
+
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(apply); // 必须防抖/节流，直接绑 resize 会抖动
+    };
+
+    apply();
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [containerRef]);
+}
+
+/* ---------- 策略 B：断点重排（根字号随视口，尺寸全部 rem 派生） ---------- */
+
+// 在全局 CSS 里：
+//   html { font-size: clamp(14px, 0.9vw + 6px, 22px); }
+// 组件内一律用 rem，禁止裸 px —— 裸 px 是高 DPI 大屏"字太小"的头号原因。
+
+/* ---------- 策略 C：混合（外层缩放 + 关键区域重排） ---------- */
+
+// 外层容器用 useScaleToFit；对"宽高比偏离设计稿超过阈值"的情况，
+// 在容器上打标记，关键区域（表格、长列表）切到断点布局：
+export function markExtremeRatio(el: HTMLElement) {
+  const ratio = el.clientWidth / el.clientHeight;
+  const deviation = Math.abs(ratio - DESIGN_WIDTH / DESIGN_HEIGHT) / (DESIGN_WIDTH / DESIGN_HEIGHT);
+  el.dataset.ratioMode = deviation > 0.2 ? 'reflow' : 'scale';
+}
+
+// 对应的 CSS：
+//   [data-ratio-mode="reflow"] .metric-grid { grid-template-columns: repeat(2, 1fr); }
+//   [data-ratio-mode="scale"]  .metric-grid { grid-template-columns: repeat(6, 1fr); }

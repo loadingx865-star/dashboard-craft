@@ -100,15 +100,56 @@ def load_baseline(path: Path) -> dict:
         return {}
 
 
+SKILL_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_BASELINE = SKILL_ROOT / "toolchain-baseline.json"
+CACHE_FILE = SKILL_ROOT / ".toolchain-cache.json"
+
+
+def load_cache() -> dict:
+    if not CACHE_FILE.exists():
+        return {}
+    try:
+        return json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def save_cache(data: dict) -> None:
+    try:
+        CACHE_FILE.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    except OSError:
+        pass
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--baseline", default="toolchain-baseline.json")
+    ap = argparse.ArgumentParser(
+        description="实时拉取工具链最新版本并与基线对比",
+        epilog="离线/内网环境请使用 --offline，只与本地基线对比，不访问网络。",
+    )
+    ap.add_argument("--baseline", default=str(DEFAULT_BASELINE),
+                    help=f"基线文件路径，默认 {DEFAULT_BASELINE.name}（脚本同级目录）")
     ap.add_argument("--update-baseline", action="store_true",
                     help="把当前最新版本写入基线文件")
+    ap.add_argument("--offline", action="store_true",
+                    help="不访问网络，只读取本地缓存/基线并输出对照表（内网可用）")
     args = ap.parse_args()
 
-    print("正在从 npm registry 拉取最新版本 ...\n")
-    current = collect()
+    if args.offline:
+        cached = load_cache()
+        print("离线模式：不访问网络，仅输出本地缓存/基线的版本对照。\n")
+        if not cached:
+            print("[WARN] 本地缓存为空，没有可对照的数据。")
+            print("       联网环境下先跑一次不带 --offline 的命令，即可生成缓存。")
+            print(f"       缓存路径：{CACHE_FILE}")
+            print("       本次没有做任何版本比对，不代表依赖是最新版。")
+            return 1
+        current = cached
+    else:
+        print("正在从 npm registry 拉取最新版本 ...\n")
+        current = collect()
+        save_cache(_strip_errors(current))
     baseline = load_baseline(Path(args.baseline))
     changed = 0
 
@@ -131,10 +172,18 @@ def main() -> int:
         print(f"与基线相比有 {changed} 项版本变化。")
         if changed:
             print("升级前请评估迁移成本，升级后必须重跑阶段 5-6 全部门禁。")
+        print(f"基线文件：{args.baseline}")
     else:
-        print(f"未找到基线文件 {args.baseline}，以上为当前最新版本。")
+        print(f"[WARN] 未找到基线文件 {args.baseline} —— 无法做版本对比。")
+        print("       上面每一行都标为 NEW 只是因为缺少基线，并不代表版本变化。")
+        print(f"       默认基线在脚本同级目录：{DEFAULT_BASELINE}")
+        return 1
 
     if args.update_baseline:
+        if args.offline:
+            print("离线模式下不更新基线（数据非实时）。")
+            return 1
+        Path(args.baseline).parent.mkdir(parents=True, exist_ok=True)
         Path(args.baseline).write_text(
             json.dumps(_strip_errors(current), indent=2, ensure_ascii=False), encoding="utf-8"
         )

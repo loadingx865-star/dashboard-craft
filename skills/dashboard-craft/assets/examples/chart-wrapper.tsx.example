@@ -1,0 +1,81 @@
+// 图表统一封装的正形态参考（React + ECharts）
+// 说明：这是"形态参考"，不是要照抄的代码。落地时按项目替换类型与主题来源。
+//
+// 铁律 4「一个概念一处实现」的落点：全项目所有图表都经过这个封装，
+// 页面里禁止直接 new echarts 或 import echarts-for-react。
+
+import { useEffect, useRef } from 'react';
+import * as echarts from 'echarts/core';
+import { LineChart, BarChart, GaugeChart } from 'echarts/charts';
+import {
+  GridComponent, TooltipComponent, LegendComponent, DatasetComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import { tokens } from '@/design-system/tokens'; // 由 design-tokens.json 生成
+
+echarts.use([
+  LineChart, BarChart, GaugeChart,
+  GridComponent, TooltipComponent, LegendComponent, DatasetComponent,
+  CanvasRenderer,
+]);
+
+export type ChartState = 'loading' | 'ready' | 'empty' | 'error';
+
+interface Props {
+  option: echarts.EChartsCoreOption;
+  state: ChartState;
+  /** 容器最小高度，走 token，不写魔法数字 */
+  height?: string;
+}
+
+// 统一主题：图表配色只能来自 chart-series-* 与语义 token
+const buildTheme = () => ({
+  color: [
+    tokens.chartSeries1, tokens.chartSeries2, tokens.chartSeries3,
+    tokens.chartSeries4, tokens.chartSeries5, tokens.chartSeries6,
+  ],
+  textStyle: { color: tokens.colorTextMuted, fontSize: tokens.fontSizeSm },
+  axisLine: { lineStyle: { color: tokens.chartAxisColor } },
+});
+
+export function Chart({ option, state, height = 'var(--chart-height-md)' }: Props) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const instRef = useRef<echarts.ECharts | null>(null);
+
+  // 实例生命周期只在这里管理：初始化 / 销毁 / 容器变化重绘
+  useEffect(() => {
+    if (!hostRef.current || state !== 'ready') return;
+
+    const inst = echarts.init(hostRef.current, buildTheme(), {
+      // 交由封装层统一处理 DPI：大屏 canvas 模糊基本都出在这里
+      devicePixelRatio: window.devicePixelRatio,
+    });
+    instRef.current = inst;
+
+    const ro = new ResizeObserver(() => inst.resize());
+    ro.observe(hostRef.current);
+
+    return () => {
+      ro.disconnect();      // 长稳运行必须清理，否则 7×24 会泄漏
+      inst.dispose();
+      instRef.current = null;
+    };
+  }, [state]);
+
+  useEffect(() => {
+    instRef.current?.setOption(option, { notMerge: false });
+  }, [option]);
+
+  // 空/加载/错误态统一由封装层渲染，避免每个页面各写一套
+  if (state !== 'ready') {
+    return (
+      <div className="chart-state" data-state={state}>
+        {state === 'loading' && <span>加载中…</span>}
+        {state === 'empty' && <span>暂无数据</span>}
+        {state === 'error' && <span>数据获取失败</span>}
+      </div>
+    );
+  }
+
+  return <div ref={hostRef} style={{ width: '100%', height }} />;
+}

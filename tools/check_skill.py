@@ -2,12 +2,15 @@
 """dashboard-craft 仓库自检。
 
 校验内容:
-  1. SKILL.md frontmatter 必填字段完整
+  1. SKILL.md frontmatter 必填字段完整、顶层字段在官方白名单内
   2. skill 名称与所在目录名一致
-  3. references/ 编号连续
-  4. 文档中引用的相对路径真实存在
-  5. 全部文件为 UTF-8 且无 BOM
-  6. scripts/ 下 Python 脚本语法正确
+  3. description 长度不超过官方上限（1024 字符）
+  4. SKILL.md 体积预算（官方建议 < 500 行 / < 5000 tokens 估算）
+  5. references/ 编号连续
+  6. 文档中引用的相对路径真实存在
+  7. assets/examples/ 只放形态参考，且在 SKILL.md 索引中登记
+  8. 全部文件为 UTF-8 且无 BOM
+  9. scripts/ 下 Python 脚本语法正确
 
 用法:
     python tools/check_skill.py
@@ -28,29 +31,68 @@ except Exception:
 
 REPO = Path(__file__).resolve().parent.parent
 SKILL = REPO / "skills" / "dashboard-craft"
+SKILL_MD = SKILL / "SKILL.md"
+
+# 官方 Agent Skills spec 允许的顶层 frontmatter 字段
+ALLOWED_FM_FIELDS = {
+    "allowed-tools",
+    "compatibility",
+    "description",
+    "license",
+    "metadata",
+    "name",
+}
 REQUIRED_FM = ("name:", "description:", "version:", "license:")
+
+# 官方建议：SKILL.md 控制在 500 行 / 5000 tokens 以内
+MAX_LINES = 500
+MAX_TOKENS = 5000
+MAX_DESCRIPTION_CHARS = 1024
+
 PATH_REF = re.compile(r"`((?:references|assets|scripts|agents)/[A-Za-z0-9_./-]+/?)`")
+CJK_RE = re.compile(r"[\u3000-\u9fff\uff00-\uffef]")
 
 problems: list[str] = []
+warnings: list[str] = []
 
 
-def check_frontmatter() -> None:
-    skill_md = SKILL / "SKILL.md"
-    if not skill_md.exists():
-        problems.append(f"缺少 {skill_md.relative_to(REPO)}")
-        return
-    text = skill_md.read_text(encoding="utf-8")
+def estimate_tokens(text: str) -> int:
+    """粗略估算 token 数：CJK 每字约 1 token，其余每 4 字符约 1 token。"""
+    cjk = len(CJK_RE.findall(text))
+    other = len(text) - cjk
+    return cjk + other // 4
+
+
+def _frontmatter(path: Path) -> str | None:
+    if not path.exists():
+        problems.append(f"缺少 {path.relative_to(REPO)}")
+        return None
+    text = path.read_text(encoding="utf-8")
     if not text.startswith("---"):
         problems.append("SKILL.md 缺少 YAML frontmatter")
-        return
+        return None
     parts = text.split("---")
     if len(parts) < 3:
         problems.append("SKILL.md frontmatter 未正确闭合")
+        return None
+    return parts[1]
+
+
+def check_frontmatter() -> None:
+    fm = _frontmatter(SKILL_MD)
+    if fm is None:
         return
-    fm = parts[1]
     for key in REQUIRED_FM:
         if key not in fm:
             problems.append(f"SKILL.md frontmatter 缺少字段: {key}")
+
+    top_keys = re.findall(r"^([A-Za-z][A-Za-z0-9_-]*):", fm, re.M)
+    for key in top_keys:
+        if key not in ALLOWED_FM_FIELDS:
+            problems.append(
+                f"SKILL.md frontmatter 含官方不支持的顶层字段: {key}"
+                f"（允许: {', '.join(sorted(ALLOWED_FM_FIELDS))}）"
+            )
 
     m = re.search(r"^name:\s*(\S+)", fm, re.M)
     if not m:
@@ -59,6 +101,37 @@ def check_frontmatter() -> None:
         problems.append(
             f"skill 名称与目录不一致: name={m.group(1)} 目录={SKILL.name}"
         )
+
+
+def check_description() -> None:
+    fm = _frontmatter(SKILL_MD)
+    if fm is None:
+        return
+    m = re.search(r"^description:\s*(.+)$", fm, re.M)
+    if not m:
+        problems.append("SKILL.md frontmatter 缺少 description")
+        return
+    desc = m.group(1).strip().strip('"').strip("'")
+    if len(desc) > MAX_DESCRIPTION_CHARS:
+        problems.append(
+            f"description 超长: {len(desc)} 字符 > {MAX_DESCRIPTION_CHARS}"
+        )
+
+
+def check_budget() -> None:
+    if not SKILL_MD.exists():
+        return
+    text = SKILL_MD.read_text(encoding="utf-8")
+    line_count = len(text.splitlines())
+    tokens = estimate_tokens(text)
+    if line_count > MAX_LINES:
+        problems.append(f"SKILL.md 行数超预算: {line_count} > {MAX_LINES}")
+    if tokens > MAX_TOKENS:
+        problems.append(
+            f"SKILL.md token 估算超预算: 约 {tokens} > {MAX_TOKENS}"
+            "（应把细则下沉到 references/）"
+        )
+    print(f"  [i]     SKILL.md: {line_count} 行 / 约 {tokens} tokens")
 
 
 def check_reference_numbering() -> None:
@@ -78,13 +151,28 @@ def check_reference_numbering() -> None:
 
 
 def check_path_references() -> None:
-    skill_md = SKILL / "SKILL.md"
-    if not skill_md.exists():
+    if not SKILL_MD.exists():
         return
-    text = skill_md.read_text(encoding="utf-8")
+    text = SKILL_MD.read_text(encoding="utf-8")
     for ref in sorted(set(PATH_REF.findall(text))):
         if not (SKILL / ref.rstrip("/")).exists():
             problems.append(f"SKILL.md 引用了不存在的路径: {ref}")
+
+
+def check_examples() -> None:
+    examples = SKILL / "assets" / "examples"
+    if not examples.exists():
+        return
+    files = sorted(p for p in examples.rglob("*") if p.is_file())
+    if not files:
+        problems.append("assets/examples/ 存在但为空")
+        return
+    if not (examples / "README.md").exists():
+        problems.append("assets/examples/ 缺少 README.md（说明这些只是形态参考）")
+    allowed_suffix = {".md", ".example", ".ts", ".tsx", ".js", ".jsx", ".css"}
+    for p in files:
+        if p.suffix not in allowed_suffix:
+            warnings.append(f"assets/examples/ 出现非预期文件类型: {p.name}")
 
 
 def check_encoding() -> None:
@@ -121,8 +209,11 @@ def check_scripts() -> None:
 
 def main() -> int:
     check_frontmatter()
+    check_description()
+    check_budget()
     check_reference_numbering()
     check_path_references()
+    check_examples()
     check_encoding()
     check_scripts()
 
@@ -141,11 +232,16 @@ def main() -> int:
         print(f"结论：不通过（{len(problems)} 个问题）")
         return 1
 
-    print("  [OK] frontmatter 完整，名称与目录一致")
+    print("  [OK] frontmatter 字段合法，名称与目录一致")
+    print("  [OK] description 长度在官方上限内")
+    print("  [OK] SKILL.md 体积在预算内")
     print("  [OK] references 编号连续")
     print("  [OK] 文档相对路径全部有效")
+    print("  [OK] assets/examples 已登记且含 README")
     print("  [OK] 全部文件 UTF-8 无 BOM")
     print("  [OK] 脚本语法正确")
+    for w in warnings:
+        print(f"  [WARN] {w}")
     print()
     print("结论：全部通过")
     return 0

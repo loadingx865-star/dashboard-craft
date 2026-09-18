@@ -1,0 +1,46 @@
+// 断点 Hook 的形态参考：断点必须来自阶段 0 实测的真实终端，不能照抄通用网站断点。
+// 说明：形态参考，不是照抄目标。
+
+import { useEffect, useState } from 'react';
+
+/** 看板断点：与阶段 0 约束卡、验收矩阵保持同一套名字 */
+export const BREAKPOINTS = {
+  wall: 2560,   // 超大屏 / 拼接屏
+  tv4k: 1920,   // 4K 电视的主设计档
+  desktop: 1280,
+  laptop: 1024,
+} as const;
+
+export type BreakpointName = keyof typeof BREAKPOINTS | 'compact';
+
+/** 优先用 CSS 容器查询；此 Hook 仅用于 JS 必须知道当前档位的场景 */
+export function useBreakpoint(): BreakpointName {
+  const read = (): BreakpointName => {
+    const w = window.innerWidth;
+    if (w >= BREAKPOINTS.wall) return 'wall';
+    if (w >= BREAKPOINTS.tv4k) return 'tv4k';
+    if (w >= BREAKPOINTS.desktop) return 'desktop';
+    if (w >= BREAKPOINTS.laptop) return 'laptop';
+    return 'compact';
+  };
+
+  const [bp, setBp] = useState<BreakpointName>(read);
+
+  useEffect(() => {
+    let raf = 0;
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setBp(read()));
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
+  return bp;
+}
+
+// 注意：能交给 CSS 的不要用 JS。JS 版本在浏览器缩放时更容易抖动，
+// 只在"必须改变渲染逻辑"（如换图表类型、切换虚拟化阈值）时才用。

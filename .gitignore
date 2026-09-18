@@ -28,6 +28,9 @@ blob-report/
 Thumbs.db
 desktop.ini
 
+# Skill 运行时缓存（本地生成）
+.toolchain-cache.json
+
 # 本地环境
 .env
 .env.local

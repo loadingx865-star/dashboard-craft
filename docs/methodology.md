@@ -1,6 +1,6 @@
 # 看板前端开发全流程方法论
 
-> 版本 1.0 · 2026-09-18
+> 版本 2.1 · 2026-09-18
 > 配套可安装 Skill：`skills/dashboard-craft/`
 
 ---
@@ -68,6 +68,8 @@
 - 性能预算、可访问性、冒烟测试。
 - 收益：交付有证据、退化可发现、问题可追溯。
 
+**容差必须按视口分档，且 DPR 要进矩阵。** 同一个 `maxDiffPixelRatio: 0.01` 在 1080p 上约允许 2 万像素差异，在 4K 上约 8.3 万，等于把大屏的破版放过。低分辨率可用比例阈值，4K 这类大画布改用 `maxDiffPixels` 绝对上限。设备像素比（125% / 150% 系统缩放、HiDPI 电视）单独列进矩阵，否则"本机清晰、现场发虚"的问题测不出来。
+
 ---
 
 ## 三、八阶段流程
@@ -99,6 +101,38 @@
 4. 一个概念一处实现
 5. 偏离必须登记
 
+### 3.1 Gate 由机器判定，不接受口头声明
+
+早期版本把 Gate 写成"人工确认项"，结果是 AI 很容易在总结里写一句"已通过"就进入下一阶段。2.1 起每个 Gate 都绑定脚本与退出码：脚本返回非 0，阶段就没过，不允许继续。
+
+| 阶段 | 判定命令（`<skill>` 为 skill 安装目录） |
+|---|---|
+| 0 | `python <skill>/scripts/check_gates.py --project . --stage 0` |
+| 1 | `python <skill>/scripts/validate_tokens.py --tokens design-system/design-tokens.json --src src,app` |
+| 2 | `python <skill>/scripts/check_gates.py --project . --stage 2` |
+| 3-4 | `python <skill>/scripts/check_gates.py --project . --stage 3` |
+| 5 | `python <skill>/scripts/check_gates.py --project . --stage 5` |
+| 6 | `python <skill>/scripts/check_gates.py --project . --stage 6` |
+| 7 | `python <skill>/scripts/check_gates.py --project . --stage 7` |
+
+一键全查：`python <skill>/scripts/check_gates.py --project .`。
+
+标准项目结构（脚本据此定位文件）：
+
+```
+design-system/
+├── constraints-card.md      阶段 0 环境约束卡
+├── MASTER.md                阶段 1 人读规范
+├── design-tokens.json       阶段 1 机读真源
+└── pages/<page>.md          页面级受限偏离
+specs/*.md                   阶段 2 任务票
+acceptance-matrix.md         阶段 5 验收矩阵
+src/layouts | components | charts
+README.md                    阶段 7 部署与回滚说明
+```
+
+硬编码检测在 CI 中用 `--fail-on-hardcode` 强制失败；本地自查可省略该参数，只告警不阻断。行内注释 `hardcode-ok: 理由` 可豁免个例（例如 Canvas 绘制参数）。
+
 ---
 
 ## 四、关键决策点
@@ -118,6 +152,8 @@
 看板推荐 **Apache ECharts**：canvas 渲染、大数据量性能好、主题系统完善、支持导出。
 
 **一个项目只用一个图表库**，且必须封装唯一入口。禁止页面临时引入第二套图表库——这是风格断层最常见的来源。
+
+**多主题项目**（如深色/浅色、白天/夜间）必须把主题写进 token 真源，而不是散落在组件里。校验脚本支持两种组织方式：单文件扁平/嵌套 token，或 `{"primitive": {...}, "themes": {"dark": {...}, "light": {...}}}`。多主题时必需 token 按各主题的**并集**判定；某个主题分支若自己声明了足够多的叶子，就视为独立完整定义，缺层会直接报错，避免"看着有多主题、实际只做了一半"。
 
 ### 4.3 断点必须来自真实终端
 
@@ -247,11 +283,12 @@ npx skills list                           # 查看已装
 ### 8.2 脚本实时拉取
 
 ```bash
-python scripts/refresh_toolchain.py                  # 拉取最新并与基线对比
+python scripts/refresh_toolchain.py                   # 拉取最新并与基线对比
 python scripts/refresh_toolchain.py --update-baseline # 确认后更新基线
+python scripts/refresh_toolchain.py --offline         # 内网：只读本地缓存，不访问网络
 ```
 
-脚本直接查 npm registry，永远反映真实最新版本。
+脚本直接查 npm registry，永远反映真实最新版本；基线默认在脚本同级目录，换个工作目录执行也不会读错。**内网环境**先联网跑一次生成 `.toolchain-cache.json`，之后用 `--offline` 即可；基线文件缺失会明确报错而不是静默把全部依赖标成"新包"。这一步本身不阻塞阶段 1，无外网就直接跳过。
 
 ### 8.3 季度复核
 
@@ -307,9 +344,12 @@ python scripts/refresh_toolchain.py --update-baseline # 确认后更新基线
 |---|---|
 | `SKILL.md` | Skill 入口：流程总览、铁律、门禁（**AI 每次开发自动加载**） |
 | `references/01~09` | 各阶段详细方法 |
-| `assets/templates/` | 约束卡、验收矩阵、Playwright 配置、token 示例、组件清单 |
-| `scripts/validate_tokens.py` | token 校验 + 硬编码色值抽查 |
-| `scripts/refresh_toolchain.py` | 工具链实时版本拉取 |
+| `assets/templates/` | 约束卡、MASTER 规范、验收矩阵、Playwright 配置、token 示例、组件清单 |
+| `scripts/validate_tokens.py` | token 校验（多主题/多层名）+ 硬编码样式检测 |
+| `scripts/check_gates.py` | 八阶段 Gate 机器判定 |
+| `scripts/refresh_toolchain.py` | 工具链实时版本拉取（支持 `--offline`） |
+| `assets/examples/` | 图表封装、大屏缩放、断点 Hook 的形态参考 |
+| `tests/run_tests.py` | 校验器正反用例回归测试 |
 | `README.md` | 安装与快速开始 |
 
 **建议**：把 `dashboard-craft/` 安装为 Skill（`npx skills add <路径> -g`），把本文档作为团队规范文档保留。

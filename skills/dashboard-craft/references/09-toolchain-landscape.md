@@ -8,8 +8,13 @@
 
 运行 `scripts/refresh_toolchain.py`，它从 npm registry 拉取本文件登记的所有包的最新版本，并与 `toolchain-baseline.json` 对比，输出差异报告。
 
+**基线路径不依赖当前目录**：脚本默认读取与自身同级的 `toolchain-baseline.json`，所以在任何目录下执行结果一致。手动指定时用 `--baseline <路径>`。
+
+**内网 / 无外网环境**：加 `--offline`，脚本不发起网络请求，只输出本地缓存与基线的对照表。首次联网运行时会自动生成缓存；若从未联网过，离线模式会明确提示"缓存为空"，此时**跳过本步，不要因此阻塞阶段 1** —— 工具链版本复核不是交付门禁。
+
 ```bash
-python scripts/refresh_toolchain.py
+python scripts/refresh_toolchain.py            # 联网
+python scripts/refresh_toolchain.py --offline  # 内网/无外网
 ```
 
 ### 2. 季度复核

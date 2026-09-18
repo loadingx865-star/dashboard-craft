@@ -89,6 +89,9 @@ Layout Shell
 
 ## Gate 检查
 
+机器判定：`python <skill>/scripts/check_gates.py --project . --stage 3`
+找不到布局骨架入口即失败；非标准目录约定需在 MASTER 的「目录结构」小节按类别登记。
+
 - [ ] 骨架在全部目标分辨率下不破版
 - [ ] 断点来自真实终端实测
 - [ ] 溢出/裁切/重叠全部消除

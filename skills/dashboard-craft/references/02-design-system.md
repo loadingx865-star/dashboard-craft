@@ -31,6 +31,22 @@ AI 只认最后一种。它读不到的颜色，它就会自己编一个。
 
 **为什么要分层**：换主题或调色时只改基础值与语义映射，组件层与页面自动跟随。若不分层，改一个主色要点遍全项目。
 
+### 写法自由度（三种都合法，校验脚本都支持）
+
+| 写法 | 形状 | 适用 |
+|---|---|---|
+| 扁平命名 | `{"semantic": {"color-bg-canvas": {...}}}` | 单主题、机器生成友好 |
+| 分组嵌套（DTCG 风格） | `{"semantic": {"color": {"bg": {"canvas": {"$value": ...}}}}}` | 层级清晰、与设计工具对齐 |
+| 多主题 | `{"primitive": {...}, "themes": {"dark": {...}, "light": {...}}}` | 深/浅主题、白天/夜间模式 |
+
+层名不必叫 `primitive/semantic/component`，`base/alias/config` 这类同义词也可。命名与层名偏离默认时，校验命令加 `--layers 基础层名,语义层名,组件层名`。
+
+### 多主题的强制要求
+
+选择多主题时，**每个主题必须能独立解析出完整的语义层与组件层**（或明确声明继承自哪个主题）。禁止只改一半：某主题缺状态色会导致该主题下状态显示为默认色，这属于隐蔽缺陷，交付前必须逐个主题跑一遍阶段 5 的截图矩阵。
+
+校验脚本对多主题的处理：必需 token 按**全部主题的并集**判定；某主题未重复声明时给出提示而非报错（允许继承写法）。
+
 ### 必备 token 类别
 
 | 类别 | 必须包含 |
@@ -108,12 +124,17 @@ design-system/
     └── <page>.md       页面级受限偏离（可选）
 ```
 
+起点模板：`assets/templates/MASTER.md`（含缩放策略、图表规范、**目录结构登记**三节）与 `assets/templates/design-tokens.example.json`。
+
+> **目录结构登记是 Gate 的一部分**：`check_gates.py --stage 3/4` 默认查找 `src/layouts`、`src/components`、`src/charts`。项目若采用其他约定（如 `app/views`、`lib/ui`），必须在 MASTER 的「目录结构」小节登记真实路径，且按类别写明用途；登记了骨架目录不等于图表封装目录也合格，两者分开判定。
+
 **层级检索规则**：构建某页面时，先查 `pages/<page>.md`；存在则其规则**覆盖** MASTER；不存在则只用 MASTER。禁止在页面里绕过这两层直接定样式。
 
 ## Gate 检查
 
 - [ ] design-tokens 覆盖全部必备类别
-- [ ] token 通过 `scripts/validate_tokens.py` 校验
+- [ ] token 通过 `scripts/validate_tokens.py` 校验（退出码为 0；写法偏离默认形状时已加 `--layers`）
+- [ ] 源码硬编码通过 `validate_tokens.py --fail-on-hardcode` 校验（退出码为 0）
 - [ ] 大屏缩放策略已选定并写入文档
 - [ ] 图表规范已成文，含空/加载/错误态
 - [ ] 页面级偏离均登记在 `pages/` 下并有理由

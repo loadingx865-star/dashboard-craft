@@ -1,0 +1,25 @@
+{
+  "base": {
+    "blue": { "500": "#3B82F6", "600": "#2563EB" },
+    "slate": { "50": "#F8FAFC", "300": "#CBD5E1", "500": "#64748B", "900": "#0F172A" },
+    "green": { "500": "#22C55E" }, "amber": { "500": "#F59E0B" }, "red": { "500": "#EF4444" },
+    "cyan": { "400": "#22D3EE" }
+  },
+  "alias": {
+    "color-bg-canvas": { "$value": "{base.slate.900}" },
+    "color-bg-surface": { "$value": "{base.slate.500}" },
+    "color-text-primary": { "$value": "{base.slate.50}" },
+    "color-text-muted": { "$value": "{base.slate.300}" },
+    "color-border": { "$value": "{base.slate.500}" },
+    "color-status-ok": { "$value": "{base.green.500}" },
+    "color-status-warn": { "$value": "{base.amber.500}" },
+    "color-status-alarm": { "$value": "{base.red.500}" },
+    "color-status-offline": { "$value": "{base.slate.500}" },
+    "font-size-metric": { "$value": "3rem" },
+    "font-size-base": { "$value": "1rem" },
+    "chart-series-1": { "$value": "{base.cyan.400}" },
+    "chart-series-2": { "$value": "{base.blue.500}" },
+    "chart-series-3": { "$value": "{base.green.500}" }
+  },
+  "config": { "card-bg": { "$value": "{alias.color-bg-surface}" } }
+}

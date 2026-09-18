@@ -8,6 +8,35 @@ on:
 
 jobs:
   check:
+    name: self-check (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Repository self-check
+        run: python tools/check_skill.py
+
+      - name: Regression tests
+        run: python tests/run_tests.py
+
+      - name: Verify scripts are runnable
+        run: |
+          python skills/dashboard-craft/scripts/validate_tokens.py --help
+          python skills/dashboard-craft/scripts/check_gates.py --help
+          python skills/dashboard-craft/scripts/refresh_toolchain.py --help
+
+  spec-validate:
+    name: Agent Skills spec validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,16 +46,9 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Repository self-check
-        run: python tools/check_skill.py
+      - name: Install skills-ref
+        run: python -m pip install "skills-ref==0.1.1"
 
-      - name: Validate example design tokens
-        run: |
-          python skills/dashboard-craft/scripts/validate_tokens.py \
-            --tokens skills/dashboard-craft/assets/templates/design-tokens.example.json \
-            --src skills/dashboard-craft/assets/templates
+      - name: Validate skill against official spec
+        run: python -m skills_ref.cli validate ./skills/dashboard-craft
 
-      - name: Verify scripts are runnable
-        run: |
-          python skills/dashboard-craft/scripts/validate_tokens.py --help > /dev/null
-          python skills/dashboard-craft/scripts/refresh_toolchain.py --help > /dev/null

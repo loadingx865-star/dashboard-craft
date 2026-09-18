@@ -1,9 +1,10 @@
 ---
 name: dashboard-craft
-description: 数据看板、运营大屏、工业控制台的前端工程化开发规范。用于新建、迭代或重构看板类前端项目，覆盖交付环境约束锁定、设计单一真源、组件与图表统一、多分辨率多浏览器验证、质量门禁与交付存档。适用于工厂电视、控制室大屏、拼接屏等多终端交付场景。不适用于营销官网、作品集等表达型页面。
+description: 数据看板 / 运营大屏 / 工业控制台的前端工程化开发规范与交付门禁。Engineering workflow, design tokens, chart and component unification, multi-resolution and multi-browser verification, quality gates, and delivery handoff for dashboard, KPI screen, control room, large display, data visualization, admin console, and plant TV projects. Use when building, iterating, refactoring, or reviewing a dashboard-type frontend, when a UI must render correctly on factory TVs, video walls, or control-room displays at 1080p/1440p/4K, or when the user mentions 看板, 大屏, 控制台, 数据可视化, KPI 大屏, 拼接屏. Also use to audit an existing dashboard for hardcoded styles, inconsistent chart theming, or missing responsive verification. 不适用于营销官网、作品集等表达型页面（那类页面请用 frontend-design 类 skill）。
 license: MIT
+compatibility: 需要 Python 3.9+（scripts/ 下的校验脚本仅用标准库）。refresh_toolchain.py 需要访问 registry.npmjs.org；内网环境请加 --offline。assets/templates/playwright.viewports.ts 需要 Node.js 与 @playwright/test。本 skill 面向 React / Vue 看板类前端，与具体框架版本无关。
 metadata:
-  version: "2.0.0"
+  version: "2.1.0"
   updated: "2026-09-18"
   author: loadingx865-star
   applies-to: React / Vue 看板类前端
@@ -28,8 +29,8 @@ AI 辅助开发看板时反复出现的三类事故：
 违背任一条，产出即视为不合格，必须回退。
 
 1. **无约束不开发** —— 环境约束卡未填写完整，不得写第一行 UI 代码。
-2. **无真源不写样式** —— 颜色、字号、间距、圆角、阴影、图表配色必须来自 design tokens，禁止页面内硬编码色值与魔法数字。
-3. **无矩阵不交付** —— 交付前必须跑完"分辨率 × 浏览器"验证矩阵，截图基线已存档。
+2. **无真源不写样式** —— 颜色、字号、间距、圆角、阴影、图表配色必须来自 design tokens，禁止页面内硬编码色值与魔法数字。硬编码包括：hex 色值、`rgb()/hsl()`、Tailwind 调色板原子类（`bg-slate-900`）、Tailwind 颜色关键字类（`text-white`）、任意值尺寸（`text-[13px]`）、内联样式数值。**由 `scripts/validate_tokens.py --fail-on-hardcode` 机器判定，不接受口头声明。**
+3. **无矩阵不交付** —— 交付前必须跑完"分辨率 × 浏览器"验证矩阵，截图基线已存档。矩阵文件与基线路径由 `scripts/check_gates.py` 校验。
 4. **一个概念一处实现** —— 同类组件与图表只有一个实现入口；禁止为赶进度另写一套。
 5. **偏离必须登记** —— 任何对设计真源的偏离，都要写入页面级覆盖文件并说明理由，禁止静默偏离。
 
@@ -47,6 +48,43 @@ AI 辅助开发看板时反复出现的三类事故：
 | 7 | 交付存档 | 交付包 + 基线资产 | 基线存档、回归资产可复跑、文档齐全 |
 
 **阶段 1 与阶段 2 可并行**；阶段 5 与阶段 6 每完成一个功能切片即可增量执行，不必等全部功能完成。
+
+## Gate 机器判定（不接受口头声明）
+
+每个阶段的 Gate 必须由脚本判定，AI 不得自行声称"已通过"。检查对象是**目标项目目录**。
+
+| 阶段 | 判定方式 | 命令 |
+|---|---|---|
+| 0 | 约束卡存在且无空项/占位符 | `python <skill>/scripts/check_gates.py --project . --stage 0` |
+| 1 | token 结构合法、无硬编码样式 | `python <skill>/scripts/validate_tokens.py --tokens design-system/design-tokens.json --src src,app` |
+| 2 | 任务文件含可验证验收标准 | `python <skill>/scripts/check_gates.py --project . --stage 2` |
+| 3 | 布局骨架入口存在 | `python <skill>/scripts/check_gates.py --project . --stage 3` |
+| 4 | 组件与图表封装各有唯一入口 | `python <skill>/scripts/check_gates.py --project . --stage 4` |
+| 5 | 矩阵无未测项、基线已登记 | `python <skill>/scripts/check_gates.py --project . --stage 5` |
+| 6 | 报告正文含性能/a11y/冒烟/视觉结论 | `python <skill>/scripts/check_gates.py --project . --stage 6` |
+| 7 | README 含部署与回滚 | `python <skill>/scripts/check_gates.py --project . --stage 7` |
+
+一键全查：`python <skill>/scripts/check_gates.py --project .`（`<skill>` 是本 skill 的安装目录）。
+
+**标准项目结构**（Gate 检查据此定位文件，没按此结构组织时才需要 `--tokens/--src` 手动指定）：
+
+```
+design-system/
+├── constraints-card.md      阶段 0 环境约束卡
+├── MASTER.md                阶段 1 人读规范（必须含缩放策略、图表规范、目录结构）
+├── design-tokens.json       阶段 1 机读真源
+└── pages/<page>.md          页面级受限偏离
+specs/*.md                   阶段 2 任务票（每票含验收标准）
+acceptance-matrix.md         阶段 5 验收矩阵（含截图基线位置）
+src/layouts|views|app        阶段 3 布局骨架入口
+src/components + src/charts  阶段 4 组件与图表唯一入口
+*report*.md                  阶段 6 性能/a11y/冒烟/视觉报告
+README.md                    阶段 7 部署与回滚说明
+```
+
+**非标准目录约定也可行**：若项目用 `app/views`、`lib/ui`、`lib/charts` 这类结构，在 MASTER 的「目录结构」小节登记真实路径即可通过阶段 3/4。登记必须按类别语义词对齐（骨架 / 组件 / 图表分别登记），登记一个不相关的目录不会放行整个结构 Gate。
+
+**汇报格式**：每阶段结束时必须贴出脚本命令与其退出码。退出码非 0 即视为 Gate 未通过，不得进入下一阶段。
 
 ## 阶段执行要点
 
@@ -74,7 +112,7 @@ AI 辅助开发看板时反复出现的三类事故：
 
 大屏特有问题必须在此定死：**字号随分辨率缩放策略**（等比缩放 / 断点重排 / 混合）。这一条决定后期约 90% 的返工量。
 
-方法见 `references/02-design-system.md`。
+起点模板见 `assets/templates/MASTER.md` 与 `assets/templates/design-tokens.example.json`，方法见 `references/02-design-system.md`。
 
 ### 阶段 2 —— 规格与拆票
 
@@ -114,6 +152,8 @@ AI 辅助开发看板时反复出现的三类事故：
 - 可访问性：对比度、焦点可见、键盘可达。
 - 冒烟测试：核心数据链路可跑通。
 - 视觉回归：无未登记差异。
+
+四类结论都必须写进报告正文（文件名含 `report`/`报告`），`check_gates.py --stage 6` 会逐项检查；只写"性能"一项的报告不算通过。
 
 方法见 `references/06-verification-matrix.md`。
 
@@ -158,4 +198,7 @@ AI 是本流程的执行者，必须遵守输入规范与禁止项：
 | `references/08-ai-collaboration.md` | AI 协作规则与 prompt 模板 |
 | `references/09-toolchain-landscape.md` | 工具链选型与持续更新机制 |
 | `assets/templates/` | 可直接复制的落地模板 |
-| `scripts/` | 校验与更新脚本 |
+| `assets/examples/` | 参考实现形态（图表封装 / 大屏缩放 / 断点 Hook） |
+| `scripts/validate_tokens.py` | token 校验 + 硬编码样式检测 |
+| `scripts/check_gates.py` | 各阶段 Gate 机器判定 |
+| `scripts/refresh_toolchain.py` | 工具链版本实时拉取（支持 --offline） |

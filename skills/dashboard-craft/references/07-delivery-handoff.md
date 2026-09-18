@@ -16,6 +16,17 @@
 | 回滚说明 | 回滚步骤与已知版本 |
 | 运行手册 | 常见问题、日志位置、重启方式 |
 
+## 交付前必须贴出机器判定结果
+
+交付说明里要包含以下命令的**退出码**，而不是"已验证"四个字：
+
+```bash
+python <skill>/scripts/check_gates.py --project .
+python <skill>/scripts/validate_tokens.py --tokens design-system/design-tokens.json --src src,app --fail-on-hardcode
+```
+
+任一条退出码非 0，交付不成立。
+
 ## 基线资产必须入库
 
 截图基线与测试脚本必须随代码版本管理。否则下次开发无法判断"是否退化"。
@@ -36,6 +47,7 @@
 - [ ] 基线可复现（相同结果）
 - [ ] 回滚路径已验证
 - [ ] 已知限制已书面说明
+- [ ] `check_gates.py` 与 `validate_tokens.py --fail-on-hardcode` 退出码均为 0
 
 ## 下一步项目的复用
 
