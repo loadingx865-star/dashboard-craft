@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Craft"
+  short_description: "看板/大屏前端工程化规范与交付门禁"
+  default_prompt: "按 dashboard-craft 规范的八阶段与门禁，完成这个看板功能。"

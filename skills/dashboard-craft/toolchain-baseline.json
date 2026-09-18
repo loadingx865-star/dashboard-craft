@@ -1,0 +1,61 @@
+{
+  "框架与构建": {
+    "react": "19.3.0",
+    "vue": "3.5.43",
+    "next": "16.3.5",
+    "vite": "8.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "@vitejs/plugin-vue": "6.0.9",
+    "typescript": "7.0.2"
+  },
+  "样式与组件": {
+    "tailwindcss": "4.3.3",
+    "unocss": "66.10.5",
+    "shadcn": "4.21.0",
+    "antd": "6.6.4",
+    "naive-ui": "2.45.3",
+    "element-plus": "2.14.5",
+    "radix-ui": "1.6.7",
+    "lucide-react": "1.47.0",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.7.0",
+    "class-variance-authority": "0.7.1"
+  },
+  "图表": {
+    "echarts": "6.1.0",
+    "echarts-for-react": "3.0.6",
+    "recharts": "3.10.1",
+    "d3": "7.9.0"
+  },
+  "数据与状态": {
+    "@tanstack/react-query": "5.103.1",
+    "@tanstack/vue-query": "5.103.1",
+    "@tanstack/react-table": "9.2.4",
+    "@tanstack/react-virtual": "3.14.13",
+    "zustand": "5.0.15",
+    "pinia": "4.0.3",
+    "swr": "2.5.1",
+    "zod": "4.6.5",
+    "axios": "1.20.0"
+  },
+  "测试与质量": {
+    "@playwright/test": "1.63.0",
+    "playwright": "1.63.0",
+    "vitest": "5.0.1",
+    "@testing-library/react": "16.3.3",
+    "axe-core": "4.13.0",
+    "@axe-core/playwright": "4.13.0",
+    "@lhci/cli": "0.15.1",
+    "size-limit": "14.0.0",
+    "pixelmatch": "7.2.0",
+    "msw": "2.15.0"
+  },
+  "工程规范": {
+    "eslint": "10.10.0",
+    "prettier": "3.9.8",
+    "husky": "9.1.7",
+    "lint-staged": "17.5.1",
+    "typescript-eslint": "8.70.0",
+    "eslint-plugin-react-hooks": "7.1.1"
+  }
+}

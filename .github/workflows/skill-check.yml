@@ -1,0 +1,32 @@
+name: skill-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Repository self-check
+        run: python tools/check_skill.py
+
+      - name: Validate example design tokens
+        run: |
+          python skills/dashboard-craft/scripts/validate_tokens.py \
+            --tokens skills/dashboard-craft/assets/templates/design-tokens.example.json \
+            --src skills/dashboard-craft/assets/templates
+
+      - name: Verify scripts are runnable
+        run: |
+          python skills/dashboard-craft/scripts/validate_tokens.py --help > /dev/null
+          python skills/dashboard-craft/scripts/refresh_toolchain.py --help > /dev/null
