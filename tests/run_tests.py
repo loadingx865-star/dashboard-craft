@@ -287,6 +287,19 @@ def main() -> int:
          "--baseline", TMP / "no-such-baseline.json"],
         1, "基线不存在 → 明确失败", "无法做版本对比")
 
+    print("\n--- 仓库自检：运行期缓存不得误报失败 ---")
+    # 先跑一次 skill 脚本再自检是正常用法；
+    # 若 __pycache__ 里的 .pyc 被当成仓库文件，自检会因非 UTF-8 文件误报失败。
+    import py_compile
+    py_compile.compile(
+        str(SCRIPTS / "check_gates.py"), doraise=True
+    )
+    run([REPO / "tools" / "check_skill.py"],
+        0, "存在 __pycache__ 时自检仍通过（不误报）", "全部通过")
+    run([REPO / "tools" / "check_skill.py"],
+        0, "自检文件总数不包含缓存文件", "52")
+    shutil.rmtree(SCRIPTS / "__pycache__", ignore_errors=True)
+
     print("\n--- 脚本可运行性 ---")
     for s in (VALIDATE, GATES, SCRIPTS / "refresh_toolchain.py"):
         run([s, "--help"], 0, f"{s.name} --help 正常退出")

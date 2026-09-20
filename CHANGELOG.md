@@ -29,7 +29,10 @@
 - `toolchain-baseline.json` 新增“兼容与降级”分组（browserslist、caniuse-lite、core-js、@babel/preset-env、@vitejs/plugin-legacy、postcss-preset-env、autoprefixer、terser），总包数 47 → 55
 
 ### 测试
-- 回归用例 33 → 34，新增反例：约束卡未声明兼容目标 → 阶段 0 失败
+- 回归用例 33 → 36，新增：约束卡未声明兼容目标 → 阶段 0 失败；存在 `__pycache__` 时自检不误报；自检文件总数不含缓存
+
+### 修复
+- `tools/check_skill.py` 此前把 `__pycache__/` 等运行期产物也算作仓库文件：先跑一次 skill 脚本、再跑自检，会因 `.pyc` 非 UTF-8 而误报失败。现统一跳过 `.git` / `__pycache__` / 虚拟环境 / 依赖目录，文件总数与编码检查不再受本地运行痕迹影响
 
 ### 说明
 - 本次不改变任何现有命令调用方式；新增判定只作用于阶段 0，旧项目补一行兼容目标即可通过

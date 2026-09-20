@@ -33,6 +33,29 @@ REPO = Path(__file__).resolve().parent.parent
 SKILL = REPO / "skills" / "dashboard-craft"
 SKILL_MD = SKILL / "SKILL.md"
 
+# 运行期产物与依赖目录：不参与编码检查与文件计数。
+# 否则"先跑一次脚本、再跑自检"就会因 __pycache__ 里的 .pyc 误报失败。
+IGNORED_DIR_PARTS = {
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "node_modules",
+}
+
+
+def _iter_repo_files():
+    """遍历仓库内应纳入自检的文件，跳过版本控制与运行期缓存目录。"""
+    for p in REPO.rglob("*"):
+        if not p.is_file():
+            continue
+        if any(part in IGNORED_DIR_PARTS for part in p.parts):
+            continue
+        yield p
+
 # 官方 Agent Skills spec 允许的顶层 frontmatter 字段
 ALLOWED_FM_FIELDS = {
     "allowed-tools",
@@ -163,7 +186,11 @@ def check_examples() -> None:
     examples = SKILL / "assets" / "examples"
     if not examples.exists():
         return
-    files = sorted(p for p in examples.rglob("*") if p.is_file())
+    files = sorted(
+        p for p in examples.rglob("*")
+        if p.is_file()
+        and not any(part in IGNORED_DIR_PARTS for part in p.parts)
+    )
     if not files:
         problems.append("assets/examples/ 存在但为空")
         return
@@ -176,10 +203,10 @@ def check_examples() -> None:
 
 
 def check_encoding() -> None:
-    for p in REPO.rglob("*"):
-        if not p.is_file() or ".git" in p.parts:
-            continue
+    for p in _iter_repo_files():
         if p.suffix in {".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf"}:
+            continue
+        if p.suffix in {".pyc", ".pyo"}:
             continue
         raw = p.read_bytes()
         try:
@@ -217,7 +244,7 @@ def main() -> int:
     check_encoding()
     check_scripts()
 
-    files = [p for p in REPO.rglob("*") if p.is_file() and ".git" not in p.parts]
+    files = list(_iter_repo_files())
     print("=" * 60)
     print("dashboard-craft 仓库自检")
     print("=" * 60)
