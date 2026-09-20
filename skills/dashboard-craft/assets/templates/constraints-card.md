@@ -71,7 +71,20 @@
 | 字体/图标是否本地化 | |
 | 代理/跨域要求 | |
 
-## 7. 大屏适配策略（供阶段 1 使用）
+## 7. 兼容目标与降级（若目标含老浏览器或国产内核，必填）
+
+> 原则：声明兼容范围，由构建链按需降级。**不因设备老旧就把源码一律退回 ES5。**
+
+| 字段 | 内容 |
+|---|---|
+| Browserslist 查询串 | |
+| 是否支持原生 ESM | |
+| 是否需要 legacy 产物（@vitejs/plugin-legacy） | |
+| 语言 polyfill 策略（core-js / useBuiltIns） | |
+| DOM polyfill 清单（ResizeObserver / IntersectionObserver 等） | |
+| 降级形态（能力缺失时的页面行为） | |
+
+## 8. 大屏适配策略（供阶段 1 使用）
 
 - [ ] 等比缩放
 - [ ] 断点重排

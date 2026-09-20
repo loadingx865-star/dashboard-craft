@@ -36,7 +36,8 @@
 | qhd | 2560px | | |
 | uhd-4k | 3840px | | |
 
-根字号方案：`html { font-size: clamp(____); }`，全部尺寸用 `rem` 派生。
+选重排：根字号方案 `html { font-size: clamp(____); }`，全部尺寸用 `rem` 派生。
+选 scale：设计稿尺寸写入 token 刻度，代码引用 token；禁止裸写 px。
 
 ## 4. 图表规范（Gate 必填）
 
@@ -54,7 +55,28 @@
 | 错误态 | |
 | 自适应 | 监听容器尺寸，防抖重绘 |
 
-## 5. 目录结构（非标准约定必填）
+## 5. 兼容与降级（目标含老浏览器时必填）
+
+> 不因设备老旧就全线写 ES5：声明目标，由构建链降级。
+
+| 项 | 规定 |
+|---|---|
+| Browserslist 查询串 | |
+| 构建目标（build.target） | |
+| 是否启用 @vitejs/plugin-legacy | |
+| DOM polyfill 清单 | |
+
+## 6. 尺寸与 scale 边界（选 scale 方案时必填）
+
+| 项 | 规定 |
+|---|---|
+| 尺寸来源 | token 刻度（禁裸写 px） |
+| scale 方案下的 px 处理 | 允许按设计稿写 px，但必须登记为 token 刻度并由代码引用 |
+| canvas DPR 补偿 | 图表封装层统一按 devicePixelRatio × scale 处理 |
+| 非设计稿比例处理 | |
+| 超宽拼接屏处理 | |
+
+## 7. 目录结构（非标准约定必填）
 
 项目若未使用 `src/layouts`、`src/components`、`src/charts` 默认约定，
 **必须在此登记真实路径**，否则阶段 3/4 的 Gate 不通过：
@@ -69,13 +91,13 @@ design-system/
 └── pages/         页面级受限偏离
 ```
 
-## 6. 组件规则
+## 8. 组件规则
 
 - 页面禁止自造样式；一切样式经由组件与 token。
 - 同类组件只有一个实现，变体通过 props 表达，不复制文件。
 - 组件必须处理空 / 加载 / 错误三态。
 
-## 7. 页面级偏离
+## 9. 页面级偏离
 
 任何偏离必须新建 `design-system/pages/<page>.md` 并写明：
 
@@ -86,6 +108,6 @@ design-system/
 是否临时（若是，注明移除条件）：
 ```
 
-## 8. 冲突裁决顺序
+## 10. 冲突裁决顺序
 
 `design-tokens.json` > 本文件 > `pages/<page>.md` > 现有代码。

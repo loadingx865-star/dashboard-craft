@@ -57,5 +57,15 @@
     "lint-staged": "17.5.1",
     "typescript-eslint": "8.70.0",
     "eslint-plugin-react-hooks": "7.1.1"
+  },
+  "兼容与降级": {
+    "browserslist": "4.29.0",
+    "caniuse-lite": "1.0.30001810",
+    "core-js": "3.50.0",
+    "@babel/preset-env": "8.0.6",
+    "@vitejs/plugin-legacy": "8.2.3",
+    "postcss-preset-env": "11.5.3",
+    "autoprefixer": "10.6.1",
+    "terser": "5.51.2"
   }
 }

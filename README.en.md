@@ -27,7 +27,7 @@ None of this is a model-capability problem. It is a missing-constraints problem.
 | 1 | No constraints, no code | Do not write UI code until the environment constraints card is complete |
 | 2 | No single source, no styles | Colors, type scale, spacing, radius, and chart palettes come from design tokens. Hardcoded values and magic numbers are forbidden. Enforced by script, not by assertion |
 | 3 | No matrix, no delivery | The resolution x browser matrix must pass and screenshot baselines must be committed. Verified by script |
-| 4 | One concept, one implementation | Shared components and charts have exactly one entry point. No parallel implementations |
+| 4 | One concept, one implementation | Shared components and charts have exactly one entry point. No parallel implementations. A new dashboard may only add configuration and layout: charts are reused from the same implementation (a dashboard is a composition) |
 | 5 | Deviations must be logged | Any deviation from the design source goes into a page-level override file with a stated reason |
 
 ### Eight stages
@@ -39,7 +39,7 @@ None of this is a model-capability problem. It is a missing-constraints problem.
 
 | Stage | Deliverable | Gate |
 |---|---|---|
-| 0 Lock constraints | Environment constraints card | Resolution, browser, scaling, network, data frequency all explicit |
+| 0 Lock constraints | Environment constraints card | Resolution, browser, scaling, network, data frequency all explicit, plus a declared Browserslist compatibility target (machine-checked) |
 | 1 Design source | Tokens + MASTER spec | Token validation passes; scaling strategy documented |
 | 2 Spec & tickets | Vertical-slice tickets | Every ticket has verifiable acceptance criteria |
 | 3 Skeleton first | Layout shell | Empty shell does not break at any target resolution |
@@ -145,7 +145,7 @@ dashboard-craft/
 |   |-- scripts/validate_tokens.py         Token validation + hardcode detection
 |   |-- scripts/check_gates.py             Machine-checked stage gates
 |   |-- scripts/refresh_toolchain.py       Toolchain version comparison
-|   `-- toolchain-baseline.json            Version baseline for 47 packages
+|   `-- toolchain-baseline.json            Version baseline for 55 packages
 |-- tests/                                 Positive/negative regression tests
 |-- tools/check_skill.py                   Repository self-check
 |-- .github/workflows/skill-check.yml      CI: Ubuntu/Windows x Python 3.9/3.11/3.13

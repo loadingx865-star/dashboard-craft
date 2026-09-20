@@ -143,7 +143,7 @@ def main() -> int:
         rewrite={
             "design-system/MASTER.md": (
                 "# MASTER\n\n## 缩放策略\n断点重排。\n\n## 图表规范\n"
-                "ECharts 唯一封装。\n\n## 目录结构\n"
+                "ECharts 唯一封装。\n\n## 7. 目录结构（非标准约定必填）\n"
                 "- `app/views/` 布局与页面骨架\n- `lib/ui/` 共享组件\n"
                 "- `lib/charts/` 图表封装\n"
             )
@@ -254,6 +254,24 @@ def main() -> int:
     )
     run([GATES, "--project", bad_matrix, "--stage", "5"],
         1, "矩阵结果为失败/不通过 → 阶段 5 失败", "阶段 5 未通过")
+
+    no_compat = variant(
+        "card-no-compat-project",
+        rewrite={"design-system/constraints-card.md": (
+            "# 环境约束卡\n\n"
+            "| 项目 | 内容 |\n|---|---|\n"
+            "| 显示终端 | 工厂电视 |\n"
+            "| 物理分辨率 | 1920x1080 |\n"
+            "| 系统缩放 | 100% |\n"
+            "| 浏览器 | Chrome 120 |\n"
+            "| 观看距离 | 3 米 |\n"
+            "| 数据频率 | 5 秒 |\n"
+            "| 网络环境 | 内网 |\n"
+        )},
+    )
+    run([GATES, "--project", no_compat, "--stage", "0"],
+        1, "约束卡未声明兼容目标 → 阶段 0 失败",
+        "未声明兼容目标")
 
     no_table = variant(
         "card-no-table-project",

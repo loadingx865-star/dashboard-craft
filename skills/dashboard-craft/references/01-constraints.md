@@ -14,7 +14,7 @@
 - 没问运行时长，7×24 连续运行几天后内存涨到崩溃。
 - 没问内网，引用了外部 CDN 字体，现场加载不出来。
 
-## 必须确认的六类约束
+## 必须确认的七类约束
 
 ### 1. 显示终端
 
@@ -85,6 +85,27 @@
 - 是否允许外部 CDN（内网通常禁止）。
 - 是否有反向代理、跨域策略。
 
+### 7. 兼容目标与降级清单
+
+"客户设备老旧"是常见约束，但它**不等于"全项目写 ES5"**。ES5 能覆盖更老的浏览器，代价是丢掉块级作用域、原生 Promise、可选链、async/await 等特性——代码更长、AI 生成质量更差、后续维护更贵。正确做法是把兼容目标**显式声明出来**，由构建链按目标降级，而不是靠人肉回退语法。
+
+| 字段 | 说明 | 示例 |
+|---|---|---|
+| Browserslist 查询串 | 全项目唯一兼容声明 | `Chrome >= 87, Edge >= 87, Firefox ESR` |
+| 是否支持原生 ESM | 决定是否需要 legacy 产物 | 不支持 → 需要 `@vitejs/plugin-legacy` |
+| 构建目标 | 语法降级目标 | `es2015` |
+| 语言 polyfill | 由目标集合与实际用量推导 | `core-js` + `@babel/preset-env`（usage 模式） |
+| DOM polyfill 清单 | **必须人工列全** | `ResizeObserver`、`IntersectionObserver`、`matchMedia` |
+| 降级形态 | 能力缺失时的页面行为 | 无 `ResizeObserver` → 退化到 `resize` 事件 |
+
+三个必须知道的边界：
+
+- **Vite 的 `build.target` 最低只能到 `es2015`**。再低也没有意义，因为 Vite 产物本身依赖原生 ESM dynamic import 与 `import.meta`。
+- **要覆盖不支持原生 ESM 的老浏览器，只能用 `@vitejs/plugin-legacy`**：它生成 legacy chunk 与 polyfill，仅对老浏览器条件加载。这才是"适配老设备"的正解。
+- **按用量推导的 polyfill 只覆盖语言特性**，`ResizeObserver`、`IntersectionObserver` 这类 DOM API 必须人工列清单，否则会在现场白屏或功能静默失效。
+
+**反面模式**：因为"客户电脑老"就在编码规范里写死"一律使用 ES5 语法"。这会让所有后续看板困在十年前的写法里。**ES5 与 ES6+ 各有优劣，应按目标浏览器与构建链能力决策，不按个人习惯决策**——即"按需降级"，而非"全线回退"。
+
 ## 产出：环境约束卡
 
 复制 `assets/templates/constraints-card.md` 填写，作为项目第一份文档，纳入版本管理。
@@ -98,6 +119,7 @@
 - [ ] 缩放比例已确认
 - [ ] 观看距离已确认，最小字号有依据
 - [ ] 数据刷新频率与量级已确认
+- [ ] 兼容目标已声明（Browserslist 查询串、是否需 legacy 产物、DOM polyfill 清单）
 - [ ] 运行时长已确认，是否需要长稳测试有结论
 - [ ] 网络与 CDN 限制已确认
 

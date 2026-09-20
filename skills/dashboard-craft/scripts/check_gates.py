@@ -154,6 +154,13 @@ def check_constraints_card(path: Path | None, allow_empty: bool):
 
     if not re.search(r"分辨率|视口|1920|3840|2560", text):
         issues.append("阶段 0 未通过：约束卡未记录任何真实分辨率/视口")
+    # 兼容目标必须显式声明：不接受“老设备”这类模糊描述代替具体声明
+    if not re.search(r"browserslist|兼容目标|构建目标|无需降级|legacy|ES5", text, re.I):
+        issues.append(
+            "阶段 0 未通过：约束卡未声明兼容目标"
+            "（需写明 Browserslist 查询串或“无需降级”结论）。"
+            "“客户设备老”不算声明"
+        )
     return issues, notes
 
 

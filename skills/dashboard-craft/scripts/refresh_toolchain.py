@@ -48,6 +48,10 @@ TRACKED = {
         "axe-core", "@axe-core/playwright", "@lhci/cli", "size-limit",
         "pixelmatch", "msw",
     ],
+    "兼容与降级": [
+        "browserslist", "caniuse-lite", "core-js", "@babel/preset-env",
+        "@vitejs/plugin-legacy", "postcss-preset-env", "autoprefixer", "terser",
+    ],
     "工程规范": [
         "eslint", "prettier", "husky", "lint-staged", "typescript-eslint",
         "eslint-plugin-react-hooks",

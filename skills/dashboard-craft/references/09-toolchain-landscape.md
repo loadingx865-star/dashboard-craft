@@ -152,6 +152,28 @@ npx skills update          # 更新已装技能
 | 提交钩子 | husky + lint-staged |
 | 提交规范 | Commitlint |
 
+### 兼容与降级
+
+"设备老"不等于"全线 ES5"。做法是把兼容目标写成 Browserslist 查询串，由构建链按目标降级：
+
+| 角色 | 首选 | 说明 |
+|---|---|---|
+| 兼容声明 | `browserslist`（`package.json` 字段或 `.browserslistrc`） | 全项目唯一兼容目标，构建与 CSS 处理共用 |
+| 目标特性数据 | `caniuse-lite` | Browserslist 的数据来源，随依赖更新 |
+| 老浏览器产物 | `@vitejs/plugin-legacy` + `@babel/preset-env` | 生成 legacy chunk，仅对不支持原生 ESM 的浏览器条件加载 |
+| 语言 polyfill | `core-js`（`useBuiltIns: usage`） | 按目标集合与实际用量注入 |
+| DOM polyfill | `additionalLegacyPolyfills` 手工清单 | 按用量推导只覆盖语言特性，DOM API 必须人工列全 |
+| CSS 前缀与降级 | `postcss-preset-env` / `autoprefixer` | 复用同一份 Browserslist 目标 |
+| 压缩 | `terser` | legacy 产物压缩（Vite < 8.1.4 或显式指定 terser 时需要） |
+
+**三条边界**：
+
+1. Vite 的 `build.target` 最低只能到 `es2015`，再低无法产出可用产物（其自身依赖原生 ESM dynamic import 与 `import.meta`）。
+2. 覆盖不支持原生 ESM 的老浏览器，必须依赖 `@vitejs/plugin-legacy`，而不是把源码退回 ES5。
+3. `@vitejs/plugin-legacy` 的 polyfill 推导只覆盖 **ES 语言特性**；`ResizeObserver` 一类 DOM API 要用 `additionalLegacyPolyfills` 手工补。
+
+**结论**：源码保持现代语法，兼容性交给构建链按 Browserslist 目标降级。**禁止**把"一律写 ES5"写进编码规范——那是用长期维护成本换一次性省事。
+
 ## 四、替代方案评估清单
 
 引入新工具前，逐条回答：

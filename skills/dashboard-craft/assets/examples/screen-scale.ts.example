@@ -4,6 +4,8 @@
 /* ---------- 策略 A：等比缩放（固定设计稿尺寸整体 scale） ---------- */
 // 适用：单一固定终端、纯展示、比例完全确定的场景。
 // 已知代价：非 16:9 会留黑边或裁切；极端缩放下字体可能模糊。
+// 重要：选了 scale 就按设计稿写尺寸（px 必须来自 token 刻度），不要与“避免写 px”混着用。
+// scale 方案下图表需补 DPR：按 devicePixelRatio × scale 提高 canvas 渲染分辨率，否则大屏上发虚。
 
 export const DESIGN_WIDTH = 1920;
 export const DESIGN_HEIGHT = 1080;
@@ -18,6 +20,7 @@ export function useScaleToFit(containerRef: React.RefObject<HTMLElement>) {
       const scale = Math.min(el.clientWidth / DESIGN_WIDTH, el.clientHeight / DESIGN_HEIGHT);
       el.style.setProperty('--scale', String(scale));
       // 用 transform 缩放：不影响布局计算，重排成本最低
+      // 图表封装层另行读取 --scale，按 devicePixelRatio * scale 设置 canvas 分辨率
     };
 
     const onResize = () => {
