@@ -1,0 +1,11 @@
+# 统一换行符：文本文件在仓库内与检出后均为 LF。
+# 只靠提交者本机的 core.autocrlf 不可靠——换行差异会让 diff 与自检结果随环境漂移。
+* text=auto eol=lf
+
+# 二进制文件不参与换行转换
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

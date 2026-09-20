@@ -2,10 +2,9 @@
 
 > An engineering standard for dashboard, wall-display, and industrial-console frontends, packaged as an installable Agent Skill.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Agent Skill](https://img.shields.io/badge/Agent%20Skill-dashboard--craft-6E56CF)](https://skills.sh)
-
 [简体中文](README.md) | **English**
+
+**License** MIT ([LICENSE](LICENSE)) · **Format** Agent Skill (`SKILL.md`, `scripts/`, `references/`, `assets/`) · **Install** `npx skills add loadingx865-star/dashboard-craft`
 
 ## The problem
 
@@ -150,7 +149,9 @@ dashboard-craft/
 |-- README.md / README.en.md               Chinese / English docs (this file)
 |-- CHANGELOG.md
 |-- CONTRIBUTING.md
-`-- LICENSE
+|-- LICENSE
+|-- .gitignore                          Ignores dependency and runtime-cache paths
+`-- .gitattributes                      Normalizes line endings to LF
 ```
 
 ## Design principles

@@ -9,6 +9,18 @@
 - 增加 CI 中的视觉回归示例工作流
 - 补充国产内核浏览器的兼容性适配清单
 
+## [2.2.2] - 2026-09-20
+
+README 不再依赖任何第三方服务，并补齐换行符与版本口径两处漂移隐患。
+
+### 变更
+- 移除 `README.md` / `README.en.md` 中的两枚 `img.shields.io` 徽章，改为纯文本元信息行（许可 / 格式 / 安装命令）。徽章图片依赖外网 CDN，加载不出时整行头部信息会一起消失——上一轮被误判为“语言切换链接失效”正是这个原因
+- 新增 `.gitattributes`，统一仓库内换行符为 LF。此前换行只靠提交者本机的 `core.autocrlf`，在非 Windows 环境贡献时可能把 CRLF 带进仓库
+- `CONTRIBUTING.md` 把“仓库版本与 Skill 版本解耦”写成明文约定：只有 `skills/` 下的内容变化才递增 `metadata.version`
+
+### 说明
+- 本次未改 `skills/dashboard-craft/` 下任何文件，`SKILL.md` 的 `metadata.version` 保持 2.2.0，已安装用户无需重装
+
 ## [2.2.1] - 2026-09-20
 
 仓库只保留 Skill 本体，移除开发脚手架；修正 README 语言切换入口。

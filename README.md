@@ -2,10 +2,9 @@
 
 > 数据看板、运营大屏、工业控制台的前端开发规范，打包成一个可安装的 Agent Skill。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Agent Skill](https://img.shields.io/badge/Agent%20Skill-dashboard--craft-6E56CF)](https://skills.sh)
-
 **简体中文** | [English](README.en.md)
+
+**许可** MIT（[LICENSE](LICENSE)） · **格式** Agent Skill（`SKILL.md`、`scripts/`、`references/`、`assets/`） · **安装** `npx skills add loadingx865-star/dashboard-craft`
 
 ## 它解决什么
 
@@ -159,7 +158,9 @@ dashboard-craft/
 ├── README.md / README.en.md              中 / 英文说明（本文件）
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
-└── LICENSE
+├── LICENSE
+├── .gitignore                          忽略依赖目录与运行期缓存
+└── .gitattributes                      统一换行符为 LF，避免跨平台行尾漂移
 ```
 
 ## 设计原则
