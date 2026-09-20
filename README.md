@@ -4,7 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Agent Skill](https://img.shields.io/badge/Agent%20Skill-dashboard--craft-6E56CF)](https://skills.sh)
-[![English](https://img.shields.io/badge/docs-English-blue)](README.en.md)
+
+**简体中文** | [English](README.en.md)
 
 ## 它解决什么
 
@@ -155,11 +156,10 @@ dashboard-craft/
 │   ├── scripts/refresh_toolchain.py      工具链版本比对
 │   └── toolchain-baseline.json           55 个依赖包的版本基线
 ├── docs/methodology.md                   面向人的完整方法论
-├── tests/                                校验器正反用例回归测试
-├── tools/check_skill.py                  仓库自检脚本
-├── .github/workflows/skill-check.yml     CI：Ubuntu/Windows × Python 3.9/3.11/3.13
+├── README.md / README.en.md              中 / 英文说明（本文件）
 ├── CHANGELOG.md
-└── CONTRIBUTING.md
+├── CONTRIBUTING.md
+└── LICENSE
 ```
 
 ## 设计原则
@@ -168,7 +168,7 @@ dashboard-craft/
 
 **本 Skill 只管编排。** `frontend-design`、`shadcn`、`vercel-react-best-practices`、`playwright` 这类技能增强的是单点能力，dashboard-craft 决定什么时候用哪个、产出要满足什么标准、不达标怎么处理。
 
-**Gate 由脚本兜底，不靠自觉。** 每个阶段的"通过"都有对应的命令与退出码；CI 里硬编码检测以 `--fail-on-hardcode` 强制失败。回归测试 `tests/run_tests.py` 保证校验器本身没有失灵——没有这层，CI 绿灯只是假象。
+**Gate 由脚本兜底，不靠自觉。** 每个阶段的"通过"都有对应的命令与退出码；CI 里硬编码检测以 `--fail-on-hardcode` 强制失败。
 
 ## 适用范围
 

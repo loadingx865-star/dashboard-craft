@@ -1,5 +1,0 @@
-{
-  "primitive": { "slate": { "900": "#0F172A" } },
-  "semantic": { "color-bg-canvas": { "$value": "{primitive.notexist}" } },
-  "component": { "card-bg": { "$value": "{semantic.color-bg-canvas}" } }
-}

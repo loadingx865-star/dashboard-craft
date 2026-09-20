@@ -401,7 +401,6 @@ python scripts/refresh_toolchain.py --offline         # 内网：只读本地缓
 | `scripts/check_gates.py` | 八阶段 Gate 机器判定 |
 | `scripts/refresh_toolchain.py` | 工具链实时版本拉取（支持 `--offline`） |
 | `assets/examples/` | 图表封装、大屏缩放、断点 Hook 的形态参考 |
-| `tests/run_tests.py` | 校验器正反用例回归测试 |
-| `README.md` | 安装与快速开始 |
+| `README.md` / `README.en.md` | 安装与快速开始（中/英） |
 
 **建议**：把 `dashboard-craft/` 安装为 Skill（`npx skills add <路径> -g`），把本文档作为团队规范文档保留。

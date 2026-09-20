@@ -4,7 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Agent Skill](https://img.shields.io/badge/Agent%20Skill-dashboard--craft-6E56CF)](https://skills.sh)
-[![中文文档](https://img.shields.io/badge/docs-%E4%B8%AD%E6%96%87-blue)](README.md)
+
+[简体中文](README.md) | **English**
 
 ## The problem
 
@@ -135,7 +136,6 @@ The full methodology (in Chinese) is in [docs/methodology.md](docs/methodology.m
 
 ```
 dashboard-craft/
-|-- docs/methodology.md                    Full methodology (Chinese)
 |-- skills/dashboard-craft/                Installable skill
 |   |-- SKILL.md                           Entry: rules + 8-stage gates
 |   |-- agents/openai.yaml                 UI metadata (Codex only)
@@ -146,11 +146,11 @@ dashboard-craft/
 |   |-- scripts/check_gates.py             Machine-checked stage gates
 |   |-- scripts/refresh_toolchain.py       Toolchain version comparison
 |   `-- toolchain-baseline.json            Version baseline for 55 packages
-|-- tests/                                 Positive/negative regression tests
-|-- tools/check_skill.py                   Repository self-check
-|-- .github/workflows/skill-check.yml      CI: Ubuntu/Windows x Python 3.9/3.11/3.13
+|-- docs/methodology.md                    Full methodology (Chinese)
+|-- README.md / README.en.md               Chinese / English docs (this file)
 |-- CHANGELOG.md
-`-- CONTRIBUTING.md
+|-- CONTRIBUTING.md
+`-- LICENSE
 ```
 
 ## Design principles
@@ -159,7 +159,7 @@ dashboard-craft/
 
 **This skill only orchestrates.** Skills such as `frontend-design`, `shadcn`, `vercel-react-best-practices`, and `playwright` strengthen a single capability. dashboard-craft decides when to use which, what the output must satisfy, and what happens when it does not.
 
-**Scripts back the gates, not good intentions.** Every stage pass has a command and an exit code. CI runs hardcode detection with `--fail-on-hardcode`. `tests/run_tests.py` proves the validators still work; without it, a green CI is an illusion.
+**Scripts back the gates, not good intentions.** Every stage pass has a command and an exit code. CI runs hardcode detection with `--fail-on-hardcode`, so a stage cannot be waved through by assertion.
 
 ## Scope
 
