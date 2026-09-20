@@ -6,8 +6,25 @@
 
 ### 计划
 - 补充 Vue 3 技术栈的示例工程
-- 增加 CI 中的视觉回归示例工作流
+- 在文档中给出 CI 接入视觉回归的示例（只写文档，不在本仓库落工作流）
 - 补充国产内核浏览器的兼容性适配清单
+
+## [2.2.3] - 2026-09-20
+
+收口 2.2.2 引入的换行策略盲区，并补齐仓库元信息。
+
+### 修复
+- `.gitattributes` 补全二进制白名单：`webp` / `avif` / `ttf` / `otf` / `eot` / `pdf`。此前未登记的类型只靠 `* text=auto` 的 NUL 探测兜底，**不含 NUL 的二进制会被当成文本改写字节**。实测复现：纯 ASCII、无 NUL 的未压缩 PDF 在 `git add` 后 blob 由 72 字节变为 65 字节（CRLF 被替换为 LF）；补全白名单后字节完全保留
+- `.gitattributes` 显式声明 `*.svg text eol=lf`。这不改变现有行为（SVG 本就是文本、本就归一为 LF），目的是不再依赖 NUL 探测，避免将来含 NUL 的 SVG 被误判为二进制而失去 diff。另注：Git 没有“白名单式二进制”写法，`*.svg text eol=lf` 与 `*.svg binary` 不能同时写
+- 两份 README 的仓库结构图：`.gitignore` / `.gitattributes` 两行的描述列与其余条目对齐（中文页第 43 列、英文页第 44 列），修正 2.2.2 新增行少缩进 2~3 格的排版问题
+
+### 变更
+- `CONTRIBUTING.md` 新增「换行符与编码」约定行：文本文件一律 LF、UTF-8 无 BOM，二进制资产不参与转换；与 `.gitattributes` 一一对应
+- `.gitignore` 补 `_tmp_tools/`、`__pycache__/`、`*.pyc`：自检脚本临时借入与 Python 运行时缓存不应出现在待提交列表
+- `CHANGELOG.md` 的 Unreleased 计划「增加 CI 中的视觉回归示例工作流」与 2.2.1「仓库只收录 Skill 本体」相矛盾，改为文档形式的接入示例
+
+### 说明
+- 本次同样未改 `skills/dashboard-craft/`，`SKILL.md` 的 `metadata.version` 保持 2.2.0，已安装用户无需重装
 
 ## [2.2.2] - 2026-09-20
 

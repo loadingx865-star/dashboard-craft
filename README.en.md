@@ -150,8 +150,8 @@ dashboard-craft/
 |-- CHANGELOG.md
 |-- CONTRIBUTING.md
 |-- LICENSE
-|-- .gitignore                          Ignores dependency and runtime-cache paths
-`-- .gitattributes                      Normalizes line endings to LF
+|-- .gitignore                             Ignores dependency and runtime-cache paths
+`-- .gitattributes                         Normalizes line endings to LF
 ```
 
 ## Design principles

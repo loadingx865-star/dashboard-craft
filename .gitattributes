@@ -9,3 +9,12 @@
 *.ico binary
 *.woff binary
 *.woff2 binary
+*.webp binary
+*.avif binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+
+# SVG 本质是文本，这里显式声明，避免被 `* text=auto` 的 NUL 探测误判成二进制而失去 diff。
+*.svg text eol=lf

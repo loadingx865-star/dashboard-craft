@@ -15,6 +15,11 @@ desktop.ini
 # Skill 运行时缓存（本地生成）
 .toolchain-cache.json
 
+# 本地借用工具与 Python 缓存（不应进入待提交列表）
+_tmp_tools/
+__pycache__/
+*.pyc
+
 # 本地环境
 .env
 .env.local

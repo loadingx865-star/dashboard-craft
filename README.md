@@ -159,8 +159,8 @@ dashboard-craft/
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── LICENSE
-├── .gitignore                          忽略依赖目录与运行期缓存
-└── .gitattributes                      统一换行符为 LF，避免跨平台行尾漂移
+├── .gitignore                            忽略依赖目录与运行期缓存
+└── .gitattributes                        统一换行符为 LF，避免跨平台行尾漂移
 ```
 
 ## 设计原则

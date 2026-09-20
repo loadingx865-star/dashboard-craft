@@ -37,6 +37,7 @@ python skills/dashboard-craft/scripts/refresh_toolchain.py --help
 | `references/*.md` | 保持文件名编号顺序；新增须在 SKILL.md 索引中登记 |
 | `assets/templates/` | 模板要能直接复制使用，不留占位符错误 |
 | `scripts/` | 必须实际运行验证；只用标准库，保持 Python 3.9 兼容 |
+| 换行符与编码 | 文本文件一律 **LF**、**UTF-8 无 BOM**；由 `.gitattributes` 强制，不依赖提交者本机的 `core.autocrlf`。二进制资产不得被转换，新增二进制类型先在 `.gitattributes` 登记 |
 | 版本号 | 遵循语义化版本；破坏性改动升 major，并同步更新 `CHANGELOG.md`。**仓库版本与 Skill 版本解耦**：只有 `skills/` 下的内容有变化才递增 `SKILL.md` 的 `metadata.version`；仅整理 README / docs / 目录结构的改动只写 CHANGELOG 条目、不动 `metadata.version`，避免已安装用户无谓重装 |
 
 ## 新增规则时的边界
